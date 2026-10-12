@@ -1,0 +1,21 @@
+# Dependencias de scripts climáticos y notebooks
+jupyterlab
+notebook
+pyspark
+pandas
+openpyxl
+pyarrow
+numpy
+matplotlib
+requests
+Pillow
+xarray
+netCDF4
+cftime
+zarr>=3
+dask[array]
+fsspec
+aiohttp
+shapely>=2
+pyproj
+ijson

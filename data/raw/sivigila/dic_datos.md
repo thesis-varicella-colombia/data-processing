@@ -1,7 +1,8 @@
+
+
 | Columna  | Descripción |
 | -------- | ------- |
-| Separación |  | 
-| CONSECUTIVE2 |  | 
+| CONSECUTIVE |  |
 | COD_EVE | Codigo del evento. Código del Evento según CIE X ó Código del Instituto Nacional de Salud. | 
 | FEC_NOT | Fecha de notificacion. AAAA-MM-DD (Año-Mes-Día separado por guiones) (Norma ISO 8601,NTC 1034) | 
 | COD_DPTO_N | Codigo del departamento de notificacion. Código del Departamento Según registro Divipola fuente DANE. Ejemplo: Nariño = 52 | 
@@ -16,9 +17,7 @@
 | EDAD | Edad. 0 = No aplica, Edad en números en enteros del paciente| 
 | UNI_MED | Unidad de medida de la edad. 0 = No aplica, 1 = Años, 2 = Meses, 3 = Días, 4 = Horas, 5 = Minutos | 
 | estrato | Estrato socioeconomico. 1 = Estrato_1, 2 = Estrato_2, 3 = Estrato_3, 4 = Estrato_4, 5 = Estrato_5, 6 = Estrato_6 | 
-| nacionalidad | Nacionalidad | 
-| nombre_nacionalidad | Nombre de la nacionalidad | 
-| COD_PAIS_O | Codigo del pais de ocurrencia. Código de país internacional | 
+| COD_PAIS_O | Codigo del pais de ocurrencia. Código de país internacional |
 | COD_DPTO_O | Codigo del departamento de ocurrencia. Código del Departamento Según registro Divipola fuente DANE. Ejemplo: Nariño = 52 | 
 | COD_MUN_O | Codigo del municipio de ocurrencia. Código DIVIPOLA municipio | 
 | Pais_ocurrencia | Pais de ocurrencia | 
@@ -26,8 +25,7 @@
 | Departamento_ocurrencia | Departamento ocurrencia | 
 | Municipio_ocurrencia | Municipio ocurrencia | 
 | AREA | Area geografica. 1 = Cabecera Municipal 2 =, Centro Poblado 3 = Rural, Disperso | 
-| OCUPACION | Ocupacion del paciente. Código de la ocupación del usuario en el Sistema, según la codificación vigente. (Clasificación internacional uniforme de ocupaciones - CIUO88). | 
-| TIP_SS | Tipo de regimen en salud. C = Contributivo, S = Subsidiado, P = Excepción, E = Especial, N = No Asegurado | 
+| TIP_SS | Tipo de regimen en salud. C = Contributivo, S = Subsidiado, P = Excepción, E = Especial, N = No Asegurado |
 | COD_ASE | Código de la entidad responsable de la atención del paciente. Código asignado por el MPS a la Administradora. Si se selecciona la opción 5= no afiliado en la variable tipo de régimen en salud, se desactiva la variable código de administradora. Para las demás opciones es obligatorio su diligenciamiento. | 
 | sem_ges | Semana gestante. >=1 AND <=45. (Si GP_GESTAN=1) | 
 | PER_ETN | Pertenencia etnica. Es el código asignado por el DANE a la pertenencia étnica, se omiten las etnias consideradas en la clasificación DANE que no tienen evidencia epidemiológica de comportamiento especial para los eventos de interés en salud pública. Se usa la codificación estándar para las de interés: 1 = Indígena, 2 = ROM, Gitano, 3 = Raizal, 4 = Palenquero, 5 = Negro-Mulato-Afro Colombiano, 6 = Otro | 
@@ -51,7 +49,7 @@
 | Pais_residencia | Pais residencia | 
 | Departamento_residencia | Departamento residencia | 
 | Municipio_residencia | Municipio residencia | 
-| FEC_CON | Fecha de consulta  <= a la fecha de notificación
+| FEC_CON | Fecha de constitución o inicio de actividades asistenciales. AAAA-MM-DD (Año-Mes-Día separado por guiones) (Norma ISO 8601,NTC 1034) | 
 | INI_SIN | Fecha de inicio de sintomas. AAAA-MM-DD (Año-Mes-Día separado por guiones) (Norma ISO 8601,NTC 1034)  | 
 | TIP_CAS | Clasificacion inicial del caso. 1 = Sospechoso, 2 = Probable, 3 = Confirmado por Laboratorio, 4 = Confirmado por Clínica, 5 = Confirmado por Nexo Epidemiológico. |  
 | PAC_HOS | Hospitalizado. 1 = Sí 2 = No | 
@@ -61,16 +59,14 @@
 | AJUSTE | seguimiento y clasificacion final del caso. 0 = No aplica - No Ajusta - 1ª Vez, 3 = Confirmado por Laboratorio, 4 = Confirmado por Clínica, 5 = Confirmador por Nexo Epidemiológico, 6 = Descartado, 7 = Otro ajuste, D = Descarte por error de digitacion |
 | fuente | Fuente. 1 = Notificación rutinaria, 2 = Busqueda Activa Institucional, 3 = Vigilancia intensificada, 4 = Busqueda Activa Comunitaria, 5 = Investigaciones. (Si AJUSTE=0 ó 7) |
 | FECHA_NTO | Fecha de nacimiento. AAAA-MM-DD (Año-Mes-Día separado por guiones) (Norma ISO 8601,NTC 1034) | 
-| CER_DEF | Numero del certificado de defuncion. Numero del certificado de defunción (Si CON_FIN=2) | 
-| CBMTE | Causa basica de defuncion o muerte. Código de la CIE X (Si CON_FIN=2) | 
+| CBMTE | Causa basica de defuncion o muerte. Código de la CIE X (Si CON_FIN=2) |
 | FEC_AJU | Fecha de ajuste. Corresponde a la fecha del sistema (systemdate) o a la fecha efectiva de digitación del registro o realizar un ajuste a un registro previo |  
 | FM_FUERZA | Fuerza militar. 1 = GAB 2 = CGF 3 = EJC 4 = ARC 5 = FAC 6 = HMC 7 = POL 8 = SIN | 
 | FM_UNIDAD | Unidad - codigo de la unidad militar. Código de la Unidad Militar según tabla de Unidades Militares | 
 | FM_GRADO | Grado - codigo del grado militar. Código de la Grado Militar según tabla de Grados Militares | 
 | confirmados | Confirmados |
-| consecutive_origen | Consecutivo origen |
-| va_sispro | Variable Sistema Integral de Informacion para la Proteccion Social. Indica si hay vinculación del registro con las bodegas de datos unificadas de SISPRO |
-| Estado_final_de_caso | Estado final del caso es un código correspondiente a la siguiente columna (nom_est_f_caso), sus valores son  (4=Confirmado por Clínica, 5=Confirmado por Nexo Epidemiológico) | 
-| nom_est_f_caso | Nombre de Estado final del caso tiene dos valores (Confirmado por Clínica, Confirmado por Nexo Epidemiológico) | 
-| Nombre_upgd | Nombre de la "unidad primaria generadora de dato" que registró el caso, es decir ente u institución de salud (como un hospital, clínica, ESE, centro médico o consultorio) responsable de detectar y notificar de forma rutinaria y obligatoria los eventos de interés en salud pública (enfermedades, intoxicaciones, lesiones, etc.) al sistema SIVIGILA. | 
+| va_sispro | Sistema Integral de Informacion para la Proteccion Social |
+| Estado_final_de_caso | Estado final del caso |
+| nom_est_f_caso | Nombre de Estado final del caso |
+| Nom_upgd | Nombre de la "unidad primaria generadora de dato" que registró el caso | 
 | FEC_ARC_XL | Fecha de creacion del archivo de Excel. AAAA-MM-DD (Año-Mes-Día separado por guiones) (Norma ISO 8601,NTC 1034) | 
