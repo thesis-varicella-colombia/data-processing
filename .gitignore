@@ -43,3 +43,7 @@ __pycache__/
 /data/processed/climate/providencia/daily/*.nc
 /data/raw/municipios/DIVIPOLA-_Códigos_municipios_20261007.csv
 /data/raw/municipios/MGN_ADM_MPIO_GRAFICO.geojson
+/data/processed/sivigila/*.parquet
+/data/processed/sivigila/*.part
+/data/processed/sivigila/quality_report_*.json
+/notebooks/stage/
