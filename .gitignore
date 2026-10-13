@@ -47,3 +47,5 @@ __pycache__/
 /data/processed/sivigila/*.part
 /data/processed/sivigila/quality_report_*.json
 /notebooks/stage/
+/data/raw/population/DCD-area-sexo-edad-proypoblacion-Mun-2005-2017_VP.xlsx
+/data/raw/population/PPED-AreaSexoEdadMun-2018-2042_VP.xlsx
