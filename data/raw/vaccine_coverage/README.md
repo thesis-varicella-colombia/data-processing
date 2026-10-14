@@ -13,7 +13,7 @@
 
 El PAI consolida información sobre la **aplicación de vacunas**. Según el Ministerio, los puntos de vacunación, equipos extramurales, municipios y departamentos reportan las aplicaciones a su nivel superior; el programa consolida la información diaria y mensualmente. Este libro presenta resultados agregados de ese sistema de reporte. No contiene registros individuales de vacunación ni permite verificar el esquema de una persona.
 
-Para reproducir la obtención del archivo, abrir la [página de coberturas](https://vacunacion.minsalud.gov.co/RT/Paginas/Coberturas-de-vacunacion.aspx), seguir el enlace **Repositorio 1998 a 2025**, descargar el ZIP y extraer el libro Excel en esta carpeta. El archivo local se conserva sin transformaciones; **no hay un script de descarga ni de procesamiento para este conjunto** en el repositorio. Una descarga posterior puede contener revisiones de los datos.
+Para reproducir la obtención del archivo, abrir la [página de coberturas](https://vacunacion.minsalud.gov.co/RT/Paginas/Coberturas-de-vacunacion.aspx), seguir el enlace **Repositorio 1998 a 2025**, descargar el ZIP y extraer el libro Excel en esta carpeta. El archivo local se conserva sin transformaciones; no hay un script de descarga. El [procesador de varicela](../../processed/vaccine_coverage/README.md) genera el CSV municipal utilizado en el análisis. Una descarga posterior puede contener revisiones de los datos.
 
 ## Variables disponibles
 

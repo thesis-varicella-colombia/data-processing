@@ -29,7 +29,7 @@ Para generar una copia CSV por año en `csv/`, desde la raíz del repositorio:
 
 El script usa `openpyxl` (incluido en `scripts/requirements.txt`), conserva el orden y los valores de las columnas sin depuración y escribe en UTF-8. Si un CSV ya existe, lo omite; `--overwrite` permite regenerarlo. Los CSV derivados no se incluyen en Git.
 
-El significado de las columnas y de varios valores codificados se documenta en el [diccionario de datos](dic_datos.md). Consúltelo antes de combinar años o construir indicadores; algunas variables pueden estar vacías, depender de otras respuestas o requerir criterios específicos de depuración.
+El significado de las columnas y de varios valores codificados se documenta en el [diccionario de datos](dic_datos.md). El notebook [`sivigila_raw_explore.ipynb`](../../../notebooks/sivigila_raw_explore.ipynb) permite explorar los archivos. Consulte el diccionario antes de combinar años o construir indicadores; algunas variables pueden estar vacías, depender de otras respuestas o requerir criterios específicos de depuración.
 
 ## Consideraciones de uso
 

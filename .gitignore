@@ -50,3 +50,4 @@ __pycache__/
 /data/raw/population/DCD-area-sexo-edad-proypoblacion-Mun-2005-2017_VP.xlsx
 /data/raw/population/PPED-AreaSexoEdadMun-2018-2042_VP.xlsx
 /data/processed/population/population_municipal_2007_2025.csv
+/data/processed/vaccine_coverage/coberturas_municipales_2016_2025.csv

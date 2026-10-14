@@ -9,7 +9,7 @@
 | Formato | `sivigila_weekly_municipal_AAAA.parquet`, uno por año, e informe `quality_report_AAAA.json` |
 | Generado por | [`scripts/processing/calculate_weekly_sivigila.py`](../../../scripts/processing/calculate_weekly_sivigila.py) |
 
-Los Parquet contienen **solo combinaciones municipio-semana con al menos una notificación**. `casos_total` es un conteo de registros del evento 831, no una tasa de incidencia ni una población completa de enfermos. No se deduplican registros porque el notebook no definía una clave ni una regla de deduplicación verificable. No se imputan semanas sin registros como cero.
+Los Parquet contienen **solo combinaciones municipio-semana con al menos una notificación**. `casos_total` es un conteo de registros del evento 831, no una tasa de incidencia ni una población completa de enfermos. No se deduplican registros porque el notebook [`sivigila_raw_explore.ipynb`](../../../notebooks/sivigila_raw_explore.ipynb) no definía una clave ni una regla de deduplicación verificable. No se imputan semanas sin registros como cero.
 
 ## Variables de salida
 

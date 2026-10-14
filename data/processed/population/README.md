@@ -12,4 +12,4 @@ Para regenerarlo desde la raíz del repositorio:
 .venv/bin/python scripts/processing/process_population.py
 ```
 
-El notebook [`population_explore.ipynb`](../../../notebooks/population_explore.ipynb) muestra las mismas transformaciones y tiene una celda final para guardar este CSV.
+El notebook [`population_raw_explore.ipynb`](../../../notebooks/population_raw_explore.ipynb) muestra las mismas transformaciones y tiene una celda final para guardar este CSV.
