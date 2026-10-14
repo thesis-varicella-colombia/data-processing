@@ -1,4 +1,4 @@
-"""Descarga CHIRPS v3 Final/rnl y completa los días de borde de 2007–2025."""
+"""Descarga CHIRPS v3 Final/sat o Final/rnl y completa los días de borde."""
 
 from __future__ import annotations
 
@@ -21,15 +21,11 @@ from PIL import Image
 LOGGER = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT = ROOT / "data/raw/precipitation/chirps"
-BASE_URL = (
-    "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/"
-    "daily/final/rnl/netcdf/byYear"
-)
-DAILY_TIFF_BASE = "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final/rnl"
+DAILY_BASE_URL = "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/final"
 CHUNK_SIZE = 1024 * 1024
 MAX_ATTEMPTS = 4
 TIMEOUT = (15, 90)  # conexión, lectura de cada bloque (segundos)
-MANIFEST_COLUMNS = ("year", "filename", "source_url", "downloaded_at_utc", "bytes")
+MANIFEST_COLUMNS = ("variant", "year", "filename", "source_url", "downloaded_at_utc", "bytes")
 MANIFEST_LOCK = threading.Lock()
 RANGE_OVERLAP = 64 * 1024
 FIRST_BORDER = date(2006, 12, 31)
@@ -37,13 +33,13 @@ LAST_BORDER = (date(2026, 1, 1), date(2026, 1, 2), date(2026, 1, 3))
 REFERENCE_YEARS = range(2007, 2026)
 
 
-def filename_for(year: int) -> str:
-    """Devuelve el nombre publicado por CHC para un año de CHIRPS v3 rnl."""
-    return f"chirps-v3.0.rnl.{year}.days_p05.nc"
+def filename_for(year: int, variant: str) -> str:
+    """Devuelve el nombre publicado por CHC para un año de CHIRPS v3."""
+    return f"chirps-v3.0.{variant}.{year}.days_p05.nc"
 
 
-def url_for(year: int) -> str:
-    return f"{BASE_URL}/{filename_for(year)}"
+def url_for(year: int, variant: str) -> str:
+    return f"{DAILY_BASE_URL}/{variant}/netcdf/byYear/{filename_for(year, variant)}"
 
 
 def validate_netcdf(path: Path, year: int, days: tuple[date, ...] | None = None) -> None:
@@ -76,17 +72,17 @@ def valid_existing(path: Path, year: int, days: tuple[date, ...] | None = None) 
     return True
 
 
-def border_path(output_dir: Path, year: int) -> Path:
+def border_path(output_dir: Path, year: int, variant: str) -> Path:
     kind = "observed" if year == 2006 else "imputed"
-    return output_dir / str(year) / f"chirps-v3.0.rnl.{year}.epidemiological-border.{kind}.nc"
+    return output_dir / str(year) / f"chirps-v3.0.{variant}.{year}.epidemiological-border.{kind}.nc"
 
 
-def first_border_tiff_url() -> str:
-    return f"{DAILY_TIFF_BASE}/2006/chirps-v3.0.rnl.2006.12.31.tif"
+def first_border_tiff_url(variant: str) -> str:
+    return f"{DAILY_BASE_URL}/{variant}/2006/chirps-v3.0.{variant}.2006.12.31.tif"
 
 
-def first_border_tiff_path(output_dir: Path) -> Path:
-    return output_dir / "2006" / "chirps-v3.0.rnl.2006.12.31.tif"
+def first_border_tiff_path(output_dir: Path, variant: str) -> Path:
+    return output_dir / "2006" / f"chirps-v3.0.{variant}.2006.12.31.tif"
 
 
 def write_border(dataset: xr.Dataset, destination: Path, year: int,
@@ -105,21 +101,21 @@ def write_border(dataset: xr.Dataset, destination: Path, year: int,
     return destination
 
 
-def download_first_border(session: requests.Session, output_dir: Path) -> Path:
+def download_first_border(session: requests.Session, output_dir: Path, variant: str) -> Path:
     """Convierte el GeoTIFF diario oficial de 2006-12-31 al NetCDF de borde."""
-    destination = border_path(output_dir, 2006)
+    destination = border_path(output_dir, 2006, variant)
     if valid_existing(destination, 2006, (FIRST_BORDER,)):
         return destination
-    reference = output_dir / "2007" / filename_for(2007)
+    reference = output_dir / "2007" / filename_for(2007, variant)
     if not valid_existing(reference, 2007):
         raise FileNotFoundError(f"Se requiere 2007 para validar la grilla del GeoTIFF: {reference}")
-    tiff = first_border_tiff_path(output_dir)
+    tiff = first_border_tiff_path(output_dir, variant)
     part = tiff.with_name(tiff.name + ".part")
     if not tiff.is_file():
         tiff.parent.mkdir(parents=True, exist_ok=True)
         for attempt in range(1, MAX_ATTEMPTS + 1):
             try:
-                stream_to_part(session, first_border_tiff_url(), part)
+                stream_to_part(session, first_border_tiff_url(variant), part)
                 with Image.open(part) as image:
                     image.verify()
                 part.replace(tiff)
@@ -157,20 +153,20 @@ def download_first_border(session: requests.Session, output_dir: Path) -> Path:
         {"precip": (("time", "latitude", "longitude"), values[None], precip_attrs)},
         coords={"time": np.array([FIRST_BORDER], dtype="datetime64[ns]"),
                 "latitude": lat, "longitude": lon},
-        attrs={"border_data_status": "observed_CHIRPS_v3_Final_rnl",
-               "source_url": first_border_tiff_url(), "source_format": "GeoTIFF",
+        attrs={"border_data_status": f"observed_CHIRPS_v3_Final_{variant}",
+               "source_url": first_border_tiff_url(variant), "source_format": "GeoTIFF",
                "source_day": FIRST_BORDER.isoformat()})
     result = write_border(selected, destination, 2006, (FIRST_BORDER,))
     LOGGER.info("Borde observado 2006 desde GeoTIFF diario: %s", result)
     return result
 
 
-def impute_last_border(output_dir: Path) -> Path:
+def impute_last_border(output_dir: Path, variant: str) -> Path:
     """Media por celda y día calendario de 2007–2025, ignorando faltantes."""
-    destination = border_path(output_dir, 2026)
+    destination = border_path(output_dir, 2026, variant)
     if valid_existing(destination, 2026, LAST_BORDER):
         return destination
-    sources = [output_dir / str(year) / filename_for(year) for year in REFERENCE_YEARS]
+    sources = [output_dir / str(year) / filename_for(year, variant) for year in REFERENCE_YEARS]
     for year, source in zip(REFERENCE_YEARS, sources):
         if not valid_existing(source, year):
             raise FileNotFoundError(f"Falta un año válido para la imputación: {source}")
@@ -202,11 +198,11 @@ def impute_last_border(output_dir: Path) -> Path:
     })
     template["precip"] = (("time", "latitude", "longitude"), estimate, precip_attrs)
     template.attrs = {
-        "title": "CHIRPS v3 Final/rnl: días de borde epidemiológico imputados",
+        "title": f"CHIRPS v3 Final/{variant}: días de borde epidemiológico imputados",
         "border_data_status": "imputed_not_observed",
         "imputation_method": "media aritmética por celda y día calendario; valores finitos >= 0",
         "reference_years": "2007-2025",
-        "reference_product": "CHIRPS v3.0 Final/rnl daily",
+        "reference_product": f"CHIRPS v3.0 Final/{variant} daily",
         "minimum_valid_years_per_cell_day": "1",
         "missing_reference_rule": "NaN si no hay ningún año válido para la celda y fecha",
     }
@@ -269,23 +265,23 @@ def stream_to_part(session: requests.Session, url: str, part: Path) -> None:
             raise IOError(f"Descarga incompleta: {downloaded}/{total_size} bytes ({url})")
 
 
-def download_year(session: requests.Session, year: int, output_dir: Path) -> Path:
+def download_year(session: requests.Session, year: int, output_dir: Path, variant: str) -> Path:
     """Descarga, valida y publica un año; reintenta fallos transitorios."""
-    destination = output_dir / str(year) / filename_for(year)
+    destination = output_dir / str(year) / filename_for(year, variant)
     if valid_existing(destination, year):
         LOGGER.info("Ya existe y es válido: %s", destination)
         return destination
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     part = destination.with_name(destination.name + ".part")
-    url = url_for(year)
+    url = url_for(year, variant)
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             LOGGER.info("Descargando %d (%d/%d): %s", year, attempt, MAX_ATTEMPTS, url)
             stream_to_part(session, url, part)
             validate_netcdf(part, year)
             part.replace(destination)
-            record_download(output_dir, year, destination, url)
+            record_download(output_dir, year, destination, url, variant)
             LOGGER.info("Guardado: %s (%d bytes)", destination, destination.stat().st_size)
             return destination
         except (requests.RequestException, OSError, ValueError) as error:
@@ -301,15 +297,19 @@ def download_year(session: requests.Session, year: int, output_dir: Path) -> Pat
     raise AssertionError("No se alcanzó una salida del ciclo de descarga")
 
 
-def record_download(output_dir: Path, year: int, path: Path, url: str) -> None:
+def record_download(output_dir: Path, year: int, path: Path, url: str, variant: str) -> None:
     """Registra la fecha real de descarga sin modificar los NetCDF originales."""
     manifest = output_dir / "download_manifest.csv"
     with MANIFEST_LOCK:
-        rows: dict[int, dict[str, str]] = {}
+        rows: dict[tuple[str, int], dict[str, str]] = {}
         if manifest.exists():
             with manifest.open(newline="", encoding="utf-8") as source:
-                rows = {int(row["year"]): row for row in csv.DictReader(source)}
-        rows[year] = {
+                for row in csv.DictReader(source):
+                    row_variant = row.get("variant") or "rnl"
+                    row["variant"] = row_variant
+                    rows[(row_variant, int(row["year"]))] = row
+        rows[(variant, year)] = {
+            "variant": variant,
             "year": str(year),
             "filename": path.name,
             "source_url": url,
@@ -321,30 +321,31 @@ def record_download(output_dir: Path, year: int, path: Path, url: str) -> None:
             with temporary.open("w", newline="", encoding="utf-8") as output:
                 writer = csv.DictWriter(output, fieldnames=MANIFEST_COLUMNS)
                 writer.writeheader()
-                writer.writerows(rows[year] for year in sorted(rows))
+                writer.writerows(rows[key] for key in sorted(rows))
             temporary.replace(manifest)
         finally:
             temporary.unlink(missing_ok=True)
 
 
-def download_year_worker(year: int, output_dir: Path) -> Path:
+def download_year_worker(year: int, output_dir: Path, variant: str) -> Path:
     """Cada hilo crea su propia sesión HTTP; solo el manifiesto es compartido."""
     with requests.Session() as session:
         session.headers.update({"User-Agent": "data-processing-thesis/1.0 (CHIRPS download)"})
-        return download_year(session, year, output_dir)
+        return download_year(session, year, output_dir, variant)
 
 
-def download_first_border_worker(output_dir: Path) -> Path:
+def download_first_border_worker(output_dir: Path, variant: str) -> Path:
     """Permite obtener el borde de 2006 junto a otros años pendientes."""
     with requests.Session() as session:
         session.headers.update({"User-Agent": "data-processing-thesis/1.0 (CHIRPS download)"})
-        return download_first_border(session, output_dir)
+        return download_first_border(session, output_dir, variant)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--start-year", type=int, default=2007)
     parser.add_argument("--end-year", type=int, default=2025)
+    parser.add_argument("--variant", choices=("sat", "rnl"), default="sat")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--workers", type=int, default=1,
                         help="Descargas anuales simultáneas (1–4; recomendado: 2)")
@@ -355,47 +356,48 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true",
                         help="Mostrar el plan sin descargar archivos")
     args = parser.parse_args()
-    if (args.start_year < 1981 or args.end_year >= datetime.now(timezone.utc).year
+    first_year = 1998 if args.variant == "sat" else 1981
+    if (args.start_year < first_year or args.end_year >= datetime.now(timezone.utc).year
             or args.start_year > args.end_year):
-        parser.error("Seleccione años completos desde 1981 hasta el año anterior al actual")
+        parser.error(f"Seleccione años completos desde {first_year} hasta el año anterior al actual")
     if not 1 <= args.workers <= 4:
         parser.error("--workers debe estar entre 1 y 4")
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     years = range(args.start_year, args.end_year + 1)
     need_first_border = args.start_year == 2007 or args.include_2006_border or args.border_only
-    LOGGER.info("CHIRPS v3 Final/rnl: %d años, %d–%d; salida: %s",
-                len(years), args.start_year, args.end_year, args.output_dir)
+    LOGGER.info("CHIRPS v3 Final/%s: %d años, %d–%d; salida: %s",
+                args.variant, len(years), args.start_year, args.end_year, args.output_dir)
     if args.dry_run:
         if not args.border_only:
             for year in years:
-                LOGGER.info("%d: %s -> %s", year, url_for(year),
-                            args.output_dir / str(year) / filename_for(year))
+                LOGGER.info("%d: %s -> %s", year, url_for(year, args.variant),
+                            args.output_dir / str(year) / filename_for(year, args.variant))
         if need_first_border:
-            LOGGER.info("Borde observado %s: %s -> %s", FIRST_BORDER, first_border_tiff_url(),
-                        border_path(args.output_dir, 2006))
+            LOGGER.info("Borde observado %s: %s -> %s", FIRST_BORDER, first_border_tiff_url(args.variant),
+                        border_path(args.output_dir, 2006, args.variant))
         if args.end_year == 2025 and not args.border_only:
             LOGGER.info("Borde imputado %s–%s: media 2007–2025 -> %s",
-                        LAST_BORDER[0], LAST_BORDER[-1], border_path(args.output_dir, 2026))
+                        LAST_BORDER[0], LAST_BORDER[-1], border_path(args.output_dir, 2026, args.variant))
         return
     with requests.Session() as session:
         session.headers.update({"User-Agent": "data-processing-thesis/1.0 (CHIRPS download)"})
         if args.border_only:
-            LOGGER.info("Borde 2006: %s", download_first_border(session, args.output_dir))
+            LOGGER.info("Borde 2006: %s", download_first_border(session, args.output_dir, args.variant))
             return
         if args.workers == 1:
             for position, year in enumerate(years, start=1):
                 LOGGER.info("Año %d/%d", position, len(years))
-                download_year(session, year, args.output_dir)
+                download_year(session, year, args.output_dir, args.variant)
             if need_first_border:
-                LOGGER.info("Borde 2006: %s", download_first_border(session, args.output_dir))
+                LOGGER.info("Borde 2006: %s", download_first_border(session, args.output_dir, args.variant))
         else:
-            reference = args.output_dir / "2007" / filename_for(2007)
+            reference = args.output_dir / "2007" / filename_for(2007, args.variant)
             border_can_run_now = need_first_border and valid_existing(reference, 2007)
             with ThreadPoolExecutor(max_workers=args.workers) as executor:
-                border_job = (executor.submit(download_first_border_worker, args.output_dir)
+                border_job = (executor.submit(download_first_border_worker, args.output_dir, args.variant)
                               if border_can_run_now else None)
-                jobs = {executor.submit(download_year_worker, year, args.output_dir): year
+                jobs = {executor.submit(download_year_worker, year, args.output_dir, args.variant): year
                         for year in years}
                 pending = list(jobs) + ([border_job] if border_job else [])
                 for job in as_completed(pending):
@@ -404,9 +406,9 @@ def main() -> None:
                     else:
                         LOGGER.info("Año %d completado: %s", jobs[job], job.result())
             if need_first_border and not border_can_run_now:
-                LOGGER.info("Borde 2006: %s", download_first_border(session, args.output_dir))
+                LOGGER.info("Borde 2006: %s", download_first_border(session, args.output_dir, args.variant))
     if args.end_year == 2025:
-        LOGGER.info("Borde 2026 imputado: %s", impute_last_border(args.output_dir))
+        LOGGER.info("Borde 2026 imputado: %s", impute_last_border(args.output_dir, args.variant))
 
 
 if __name__ == "__main__":
