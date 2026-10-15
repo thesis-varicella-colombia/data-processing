@@ -1,81 +1,128 @@
-# Procesamiento de datos de clima y varicela en Colombia
+# Datos semanales de varicela y clima en Colombia
 
-Este repositorio prepara series semanales por municipio para estudiar la relación entre el clima y las notificaciones de varicela individual (evento 831) en Colombia durante 2007–2025. Descarga datos climáticos, transforma los microdatos de Sivigila y genera archivos Parquet por año epidemiológico. También procesa las proyecciones anuales de población municipal del DANE para usarlas como denominadores en el análisis de incidencia.
+Este repositorio construye una tabla municipio × semana epidemiológica para analizar notificaciones de varicela individual (Sivigila, evento 831) entre 2007 y 2025 junto con población, vacunación y clima. El resultado final se genera con [`scripts/processing/integrate_sivigila.py`](scripts/processing/integrate_sivigila.py) en [`data/processed/integration_data/`](data/processed/integration_data/README.md). El [catálogo de datos](data/README.md) describe las variables y unidades de las fuentes y productos.
 
-El [catálogo de datos](data/README.md) describe las variables, unidades, fuentes y limitaciones de cada conjunto.
+## Requisitos y archivos que se obtienen manualmente
 
-## Estructura
-
-| Ruta | Contenido |
-| --- | --- |
-| [`scripts/download/`](scripts/download/) | Descarga de ERA5-Land, ERA5 atmosférico para Providencia y CHIRPS. |
-| [`scripts/processing/`](scripts/processing/) | Cálculo climático semanal, estimación de Providencia y procesamiento de Sivigila y población. |
-| [`data/raw/`](data/raw/) | Fuentes originales y sus fichas técnicas. |
-| [`data/processed/`](data/processed/) | Resultados semanales y descripción de sus métodos. |
-| [`notebooks/`](notebooks/) | Cuadernos de exploración de [población](notebooks/population_raw_explore.ipynb) y [Sivigila](notebooks/sivigila_raw_explore.ipynb), e [integración](notebooks/integration_sivigila.ipynb) de ambos conjuntos. |
-| [`tests/`](tests/) | Pruebas de los descargadores y procesadores. |
-
-Algunos datos voluminosos y fuentes originales están excluidos de Git. Una copia nueva del repositorio requiere obtener esas entradas antes de ejecutar los procesadores. Consulte las fichas de [geografía municipal](data/raw/municipios/README.md), [Sivigila](data/raw/sivigila/README.md) y [población DANE](data/raw/population/README.md) para preparar los archivos locales.
-
-## Preparación
-
-Se requiere Python 3.12. Desde la raíz del repositorio:
+Se requiere **Python 3.12** y **Java 17** para PySpark. Desde la raíz del repositorio:
 
 ```bash
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 ```
 
-Las descargas de ERA5 desde Earth Data Hub requieren una clave de API en `EARTHDATAHUB_API_KEY` o en `~/.netrc` para `data.earthdatahub.destine.eu`. Los scripts de CHIRPS descargan datos públicos sin esa clave. Las fichas de [ERA5-Land](data/raw/era5_land/README.md), [ERA5 para Providencia](data/raw/era5_atmosphere_providencia/README.md) y [CHIRPS](data/raw/precipitation/chirps/README.md) detallan cada fuente.
+Los descargadores de ERA5 necesitan `EARTHDATAHUB_API_KEY` (o `EDH_API_KEY`) o credenciales para `data.earthdatahub.destine.eu` en `~/.netrc`. CHIRPS se descarga sin esa clave. Para ejecutar desde cero, prepare además estas entradas que no tienen descargador automático en el repositorio:
 
-## Flujo de trabajo
+| Entrada | Ubicación esperada | Instrucciones |
+| --- | --- | --- |
+| Códigos DIVIPOLA y polígonos MGN 2025 | `data/raw/municipios/DIVIPOLA-_Códigos_municipios_20261007.csv` y `data/raw/municipios/MGN_ADM_MPIO_GRAFICO.geojson` | [Geografía municipal](data/raw/municipios/README.md) |
+| Excel anuales de varicela, 2007–2025 | `data/raw/sivigila/excel/Datos_AAAA_831.xlsx` | [Microdatos Sivigila](data/raw/sivigila/README.md) y [diccionario](data/raw/sivigila/dic_datos.md) |
+| Dos libros de proyecciones municipales DANE | `data/raw/population/` con los nombres exactos de la ficha | [Población DANE](data/raw/population/README.md) |
+| Libro de coberturas PAI | `data/raw/vaccine_coverage/` con el nombre exacto de la ficha | [Vacunación PAI](data/raw/vaccine_coverage/README.md) |
 
-Los comandos siguientes se ejecutan desde la raíz y, salvo que se indiquen años, trabajan sobre 2007–2025.
+Los archivos originales y varios resultados grandes están excluidos de Git; una clonación nueva no contiene necesariamente los datos necesarios. La descarga CHIRPS `sat` completa requiere aproximadamente **70–80 GiB** de espacio para sus NetCDF anuales. Compruebe espacio y credenciales antes de empezar.
 
-1. Obtenga el CSV DIVIPOLA y el GeoJSON municipal MGN 2025 según la [ficha geográfica](data/raw/municipios/README.md). Son necesarios para los cálculos por municipio.
-2. Descargue ERA5-Land, incluidos los meses de borde que completan las semanas inicial y final:
+## Datos y documentación
 
-   ```bash
-   .venv/bin/python scripts/download/download_era5_land.py --validate-only
-   .venv/bin/python scripts/download/download_era5_land.py
-   .venv/bin/python scripts/download/download_era5_land.py --month 2006-12
-   .venv/bin/python scripts/download/download_era5_land.py --month 2026-01
-   ```
+El [catálogo general](data/README.md) reúne variables, unidades y periodos. Estas son **todas las fichas README de datos** del repositorio:
 
-3. Genere los tres productos climáticos semanales:
+| Etapa | Datos y README | Producto principal |
+| --- | --- | --- |
+| Entrada | [MGN 2025 y DIVIPOLA](data/raw/municipios/README.md) | Geometría y códigos municipales |
+| Entrada | [Sivigila evento 831](data/raw/sivigila/README.md) | Excel anuales de notificaciones |
+| Entrada | [Población DANE](data/raw/population/README.md) | Dos libros Excel municipales |
+| Entrada | [Vacunación PAI](data/raw/vaccine_coverage/README.md) | Libro Excel de coberturas |
+| Entrada | [ERA5-Land](data/raw/era5_land/README.md) | NetCDF diarios de 2007–2025 y meses de borde |
+| Entrada | [ERA5 atmosférico para Providencia](data/raw/era5_atmosphere_providencia/README.md) | NetCDF horarios mensuales de 2006-12 a 2026-01 |
+| Entrada | [CHIRPS v3](data/raw/precipitation/chirps/README.md) | NetCDF diarios `sat` y, opcionalmente, `rnl` |
+| Método común | [Clima municipal](data/processed/climate/README.md) | Semanas epidemiológicas, fórmulas y ponderación espacial |
+| Derivado | [Temperatura ERA5-Land](data/processed/climate/temperature/README.md) | `temperature_weekly_municipal_AAAA.parquet` |
+| Derivado | [Humedad ERA5-Land](data/processed/climate/humidity/README.md) | `humidity_weekly_municipal_AAAA.parquet` |
+| Derivado | [Precipitación ERA5-Land](data/processed/climate/precipitation/README.md) | `precipitation_weekly_municipal_AAAA.parquet` |
+| Derivado | [Clima estimado para Providencia](data/processed/climate/providencia/README.md) | Temperatura, humedad y precipitación semanales separadas |
+| Derivado | [Precipitación CHIRPS municipal](data/processed/chirps_precipitation/README.md) | `chirps_precipitation_weekly_municipal_sat_AAAA.parquet` |
+| Derivado | [Casos Sivigila municipales](data/processed/sivigila/README.md) | `sivigila_weekly_municipal_AAAA.parquet` |
+| Derivado | [Población municipal](data/processed/population/README.md) | `population_municipal_2007_2025.csv` |
+| Derivado | [Coberturas de varicela](data/processed/vaccine_coverage/README.md) | `coberturas_municipales_2016_2025.csv` |
+| Final | [Integración semanal municipal](data/processed/integration_data/README.md) | `sivigila_integrado_semanal_municipal.parquet/` |
 
-   ```bash
-   .venv/bin/python scripts/processing/calculate_weekly_temperature.py
-   .venv/bin/python scripts/processing/calculate_weekly_humidity.py
-   .venv/bin/python scripts/processing/calculate_weekly_precipitation.py
-   ```
+Los [scripts de descarga](scripts/download/) obtienen ERA5 y CHIRPS; los [scripts de procesamiento](scripts/processing/) generan las tablas. Los [notebooks](notebooks/) sirven para exploración y contienen la [integración interactiva](notebooks/integration_sivigila.ipynb). La ruta reproducible para la salida final es el script de integración.
 
-4. Para Sivigila, descargue los Excel anuales del evento 831 como explica su [ficha](data/raw/sivigila/README.md), guárdelos en `data/raw/sivigila/excel/` y ejecute:
+## Orden de ejecución desde cero
 
-   ```bash
-   .venv/bin/python scripts/processing/convert_sivigila_excel_to_csv.py
-   .venv/bin/python scripts/processing/calculate_weekly_sivigila.py
-   ```
+Ejecute los comandos **desde la raíz del repositorio**. Los valores predeterminados cubren 2007–2025. Complete primero los archivos manuales de la sección anterior: DIVIPOLA y MGN son necesarios para las descargas y agregaciones espaciales, y los Excel para sus respectivos procesadores.
 
-5. Descargue los dos libros Excel municipales del DANE indicados en la [ficha de población](data/raw/population/README.md), guárdelos en `data/raw/population/` y genere el CSV municipal:
+### 1. Descargar ERA5-Land y calcular el clima municipal
 
-   ```bash
-   .venv/bin/python scripts/processing/process_population.py
-   ```
+La descarga anual no incluye los dos meses que completan las semanas epidemiológicas extremas; descárguelos explícitamente antes de procesar. La [ficha de entrada](data/raw/era5_land/README.md) y la [metodología climática](data/processed/climate/README.md) describen el recorte y las variables.
 
-La salida climática queda en `data/processed/climate/{temperature,humidity,precipitation}/` y la de casos en `data/processed/sivigila/`. Cada producto tiene un Parquet por año; Sivigila también genera informes `quality_report_AAAA.json`. Los scripts de cálculo semanal aceptan `--start-year`, `--end-year`, `--validate-only` y `--overwrite`; los climáticos admiten además `--municipality CODIGO`. Consulte la [metodología climática](data/processed/climate/README.md) y la [ficha del agregado Sivigila](data/processed/sivigila/README.md) antes de unir las tablas.
+```bash
+.venv/bin/python scripts/download/download_era5_land.py --validate-only
+.venv/bin/python scripts/download/download_era5_land.py
+.venv/bin/python scripts/download/download_era5_land.py --month 2006-12
+.venv/bin/python scripts/download/download_era5_land.py --month 2026-01
+.venv/bin/python scripts/processing/calculate_weekly_temperature.py
+.venv/bin/python scripts/processing/calculate_weekly_humidity.py
+.venv/bin/python scripts/processing/calculate_weekly_precipitation.py
+```
 
-El procesador de población crea un único archivo, [`population_municipal_2007_2025.csv`](data/processed/population/population_municipal_2007_2025.csv), con una fila por municipio y año, y columnas de población total, por sexo, área y grupo de edad. El notebook [`population_raw_explore.ipynb`](notebooks/population_raw_explore.ipynb) muestra la transformación; [`integration_sivigila.ipynb`](notebooks/integration_sivigila.ipynb) lee este CSV y lo cruza con el agregado semanal de Sivigila por código municipal y año. La [ficha de población procesada](data/processed/population/README.md) describe sus variables.
+Esto genera 19 Parquet por variable en `data/processed/climate/{temperature,humidity,precipitation}/`.
 
-### Fuentes y productos adicionales
+### 2. Descargar y procesar ERA5 atmosférico para Providencia
 
-- **Providencia:** ERA5-Land no aporta celdas válidas para el municipio `88564`. La [estimación separada](data/processed/climate/providencia/README.md) usa ERA5 atmosférico horario. Se obtiene con `download_era5_providencia.py` y se procesa con `estimate_providencia.py`; sus Parquet se guardan aparte e identifican la fuente y el carácter estimado del dato.
-- **CHIRPS:** `scripts/download/download_chirps_precipitation.py` descarga precipitación diaria CHIRPS v3 Final/`sat` por defecto; [`calculate_weekly_chirps_precipitation.py`](scripts/processing/calculate_weekly_chirps_precipitation.py) produce la serie municipal semanal `sat` en `data/processed/chirps_precipitation/`. Para la sensibilidad frente a ERA5, `sat` usa IMERG en la asignación diaria y aporta mayor independencia que `rnl`, aunque comparte los totales pentadales CHIRPS. La serie previa `rnl` se conserva y se selecciona con `--variant rnl`. Consulte sus fichas de [origen](data/raw/precipitation/chirps/README.md) y [procesamiento](data/processed/chirps_precipitation/README.md). El procesador semanal ERA5-Land indicado arriba utiliza `tp` de ERA5-Land.
-- **Vacunación:** las coberturas PAI están descritas en su [ficha de origen](data/raw/vaccine_coverage/README.md) y el CSV de varicela en su [ficha procesada](data/processed/vaccine_coverage/README.md). Para generarlo, ejecute `.venv/bin/python scripts/processing/process_vaccine_coverage.py` desde la raíz del repositorio.
+El descargador obtiene los meses horarios necesarios, incluidos los bordes; el procesador deriva días UTC y después las tres series semanales. Véanse las fichas de [entrada](data/raw/era5_atmosphere_providencia/README.md) y [estimación](data/processed/climate/providencia/README.md).
 
-## Interpretación y pruebas
+```bash
+.venv/bin/python scripts/download/download_era5_providencia.py --validate-only
+.venv/bin/python scripts/download/download_era5_providencia.py
+.venv/bin/python scripts/processing/estimate_providencia.py
+```
 
-Las semanas epidemiológicas van de domingo a sábado y la semana 1 contiene el 4 de enero. Los días de ERA5 usados aquí están etiquetados en UTC. Los registros Sivigila se agrupan por el año y la semana **reportados** en sus microdatos; los conteos representan notificaciones. Las poblaciones DANE son estimaciones anuales que el notebook de integración usa como denominadores de incidencia por 100.000 habitantes. La [ficha del agregado](data/processed/sivigila/README.md) documenta discrepancias entre semanas reportadas y fechas individuales que deben revisarse al cruzar casos con clima.
+### 3. Descargar y agregar CHIRPS `sat`
+
+El descargador incluye el día observado 2006-12-31 y genera los días **imputados** 2026-01-01 a 2026-01-03 necesarios para la última semana. La integración final usa `sat`. Consulte las fichas de [descarga](data/raw/precipitation/chirps/README.md) y [agregación](data/processed/chirps_precipitation/README.md).
+
+```bash
+.venv/bin/python scripts/download/download_chirps_precipitation.py --dry-run
+.venv/bin/python scripts/download/download_chirps_precipitation.py --variant sat --workers 2
+.venv/bin/python scripts/processing/calculate_weekly_chirps_precipitation.py --variant sat
+```
+
+Para reconstruir también la serie histórica adicional `rnl`, repita los dos últimos comandos con `--variant rnl`. **`rnl` no es una entrada del dataset integrado**.
+
+### 4. Procesar los Excel de Sivigila
+
+Los 19 archivos `Datos_AAAA_831.xlsx` deben estar en `data/raw/sivigila/excel/`. Primero se convierten a CSV y después se agregan por municipio, año y semana **reportados** en los microdatos. Consulte las fichas de [origen](data/raw/sivigila/README.md) y [agregado](data/processed/sivigila/README.md).
+
+```bash
+.venv/bin/python scripts/processing/convert_sivigila_excel_to_csv.py
+.venv/bin/python scripts/processing/calculate_weekly_sivigila.py
+```
+
+### 5. Procesar población y vacunación
+
+Con los libros DANE y PAI en las carpetas indicadas arriba, genere los dos CSV que utiliza la integración. Consulte las fichas de [población](data/processed/population/README.md) y [vacunación](data/processed/vaccine_coverage/README.md).
+
+```bash
+.venv/bin/python scripts/processing/process_population.py
+.venv/bin/python scripts/processing/process_vaccine_coverage.py
+```
+
+La cobertura de vacunación integrada se etiqueta con el año siguiente al de la hoja PAI; por eso el CSV final cubre 2016–2025.
+
+### 6. Generar el dataset integrado
+
+Ejecute este paso **después** de completar todas las salidas anteriores:
+
+```bash
+.venv/bin/python scripts/processing/integrate_sivigila.py
+```
+
+El script verifica la presencia de los archivos anuales requeridos, calcula diez tasas de incidencia por 100.000 habitantes y une población y vacunación por municipio y año; CHIRPS y clima se unen por municipio, año y semana epidemiológica. Completa solo los valores climáticos nulos de Providencia (`88564`) con sus estimaciones separadas y conserva columnas de fuente, cobertura y carácter estimado. Escribe un **directorio Parquet de Spark** en `data/processed/integration_data/sivigila_integrado_semanal_municipal.parquet/`, sobrescribiendo la salida anterior. La [ficha del producto final](data/processed/integration_data/README.md) explica cómo leerlo.
+
+## Interpretación y comprobación
+
+Las semanas epidemiológicas van de domingo a sábado; la semana 1 contiene el 4 de enero. ERA5-Land y los días derivados para Providencia usan UTC. CHIRPS usa etiquetas diarias cuyo periodo observacional no siempre equivale a un día UTC. Los conteos Sivigila son **notificaciones**, y la población DANE son estimaciones anuales usadas como denominadores. La estimación atmosférica para Providencia tiene otra fuente y resolución que ERA5-Land. Consulte las fichas enlazadas para interpretar esas diferencias y los faltantes.
 
 Para ejecutar las pruebas locales:
 
