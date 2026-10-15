@@ -52,3 +52,4 @@ __pycache__/
 /data/processed/population/population_municipal_2007_2025.csv
 /data/processed/vaccine_coverage/coberturas_municipales_2016_2025.csv
 /data/processed/chirps_precipitation/chirps_precipitation_weekly_municipal_*.parquet
+/data/processed/integration_data/*.parquet/
