@@ -24,6 +24,15 @@ DIVIPOLA = ROOT / "data/raw/municipios/DIVIPOLA-_Códigos_municipios_20261007.cs
 OUTPUT = ROOT / "data/processed/sivigila"
 LOGGER = logging.getLogger(__name__)
 CHUNK_SIZE = 50_000
+GEOGRAPHIC_CODE_ALIASES = {
+    "27086": "27493",  # Belén de Bajirá -> Nuevo Belén de Bajirá
+    "94663": "94343",  # Mapiripana -> Barrancominas
+    "88000": "88001",  # Municipio desconocido del archipiélago -> San Andrés
+}
+RESIDENCE_CRITERION = (
+    "todas las entidades del DIVIPOLA local; "
+    "homologaciones 27086 a 27493, 94663 a 94343 y 88000 a 88001"
+)
 
 GROUP_COLUMNS = ["ano_epidemiologico", "semana_epidemiologica", "codigo_municipio"]
 SOURCE_COLUMNS = [
@@ -53,20 +62,22 @@ POPULATION_GROUPS = {
 }
 
 
-def municipality_names(path: Path) -> tuple[dict[str, str], set[str]]:
-    """Usa el mismo universo de entidades MUNICIPIO que el clima municipal."""
+def entity_names(path: Path) -> tuple[dict[str, str], set[str]]:
+    """Acepta todos los códigos de entidades del DIVIPOLA local."""
     df = pd.read_csv(path, dtype=str, encoding="utf-8-sig", keep_default_na=False)
-    expected = {"Código Municipio", "Nombre Municipio", "Tipo: Municipio / Isla / Área no municipalizada"}
+    expected = {"Código Municipio", "Nombre Municipio"}
     if not expected.issubset(df.columns):
         raise ValueError(f"DIVIPOLA carece de columnas requeridas: {expected - set(df.columns)}")
     codes = df["Código Municipio"].str.strip().str.zfill(5)
     names = df["Nombre Municipio"].str.strip()
-    kind = df["Tipo: Municipio / Isla / Área no municipalizada"].str.strip().str.upper()
     if codes.duplicated().any():
-        raise ValueError("DIVIPOLA tiene códigos municipales duplicados")
-    valid = dict(zip(codes[kind.eq("MUNICIPIO")], names[kind.eq("MUNICIPIO")]))
+        raise ValueError("DIVIPOLA tiene códigos de entidad duplicados")
+    valid = dict(zip(codes, names))
     if not valid:
-        raise ValueError("DIVIPOLA no contiene municipios")
+        raise ValueError("DIVIPOLA no contiene entidades")
+    missing_targets = set(GEOGRAPHIC_CODE_ALIASES.values()) - set(valid)
+    if missing_targets:
+        raise ValueError(f"DIVIPOLA carece de códigos destino para homologar: {sorted(missing_targets)}")
     return valid, set(codes)
 
 
@@ -133,14 +144,15 @@ def add_metrics(df: pd.DataFrame, valid_codes: set[str]) -> pd.DataFrame:
                        (5, "investigaciones")]:
         add(f"casos_{name}", source.eq(code))
 
-    notification = df.COD_MUN_N.str.strip().str.zfill(5)
+    notification = df.COD_MUN_N.str.strip().str.zfill(5).replace(GEOGRAPHIC_CODE_ALIASES)
     known_notification = notification.isin(valid_codes)
     same_notification = known_notification & notification.eq(df.codigo_municipio)
     add("casos_notificados_mismo_municipio", same_notification)
     add("casos_notificados_otro_municipio", known_notification & ~same_notification)
     add("casos_municipio_notificacion_desconocido", ~known_notification)
 
-    occurrence = df.COD_DPTO_O.str.strip().str.zfill(2) + df.COD_MUN_O.str.strip().str.zfill(3)
+    occurrence = (df.COD_DPTO_O.str.strip().str.zfill(2)
+                  + df.COD_MUN_O.str.strip().str.zfill(3)).replace(GEOGRAPHIC_CODE_ALIASES)
     colombia = number(df.COD_PAIS_O).eq(170)
     known_occurrence = colombia & occurrence.isin(valid_codes)
     add("casos_ocurridos_en_colombia", colombia)
@@ -206,14 +218,18 @@ def process_year(source: Path, year: int, names: dict[str, str], all_codes: set[
         if not reported_week.isin([week for y, week in weeks if y == year]).all():
             raise ValueError(f"{source.name}: SEMANA fuera del calendario epidemiológico {year}")
 
-        code = chunk.COD_DPTO_R.str.strip().str.zfill(2) + chunk.COD_MUN_R.str.strip().str.zfill(3)
-        municipal = code.isin(valid)
-        quality["excluidos_entidad_no_municipio"] += int((~municipal & code.isin(all_codes)).sum())
-        quality["excluidos_codigo_residencia_desconocido"] += int((~municipal & ~code.isin(all_codes)).sum())
-        excluded_codes.update(code[~municipal].value_counts().to_dict())
+        raw_code = chunk.COD_DPTO_R.str.strip().str.zfill(2) + chunk.COD_MUN_R.str.strip().str.zfill(3)
+        code = raw_code.replace(GEOGRAPHIC_CODE_ALIASES)
+        quality["homologados_27086_a_27493"] += int(raw_code.eq("27086").sum())
+        quality["homologados_94663_a_94343"] += int(raw_code.eq("94663").sum())
+        quality["homologados_88000_a_88001"] += int(raw_code.eq("88000").sum())
+        known_entity = code.isin(valid)
+        quality["excluidos_entidad_no_municipio"] += int((~known_entity & code.isin(all_codes)).sum())
+        quality["excluidos_codigo_residencia_desconocido"] += int((~known_entity & ~code.isin(all_codes)).sum())
+        excluded_codes.update(code[~known_entity].value_counts().to_dict())
         adjustment = chunk.AJUSTE.str.strip().str.upper()
-        kept = municipal & ~adjustment.isin(["6", "D"])
-        quality["excluidos_ajuste_6_o_D"] += int((municipal & ~kept).sum())
+        kept = known_entity & ~adjustment.isin(["6", "D"])
+        quality["excluidos_ajuste_6_o_D"] += int((known_entity & ~kept).sum())
         chunk = chunk.loc[kept].copy()
         if chunk.empty:
             continue
@@ -262,7 +278,7 @@ def process_year(source: Path, year: int, names: dict[str, str], all_codes: set[
     except ValueError:
         source_name = str(source)
     report = {"anio": year, "fuente": source_name,
-              "criterio": "ANO/SEMANA reportados; solo entidades DIVIPOLA Municipio",
+              "criterio": f"ANO/SEMANA reportados; {RESIDENCE_CRITERION}",
               "conteos": dict(sorted(quality.items())),
               "codigos_residencia_excluidos": dict(excluded_codes.most_common())}
     return result, report
@@ -276,6 +292,7 @@ def saved_output_is_valid(output: Path, report_path: Path, year: int,
         report = json.loads(report_path.read_text(encoding="utf-8"))
         frame = pd.read_parquet(output, columns=GROUP_COLUMNS + ["casos_total"])
         return (report["anio"] == year
+                and report["criterio"] == f"ANO/SEMANA reportados; {RESIDENCE_CRITERION}"
                 and not frame.empty
                 and frame.ano_epidemiologico.eq(year).all()
                 and frame.codigo_municipio.isin(valid_codes).all()
@@ -299,7 +316,7 @@ def main() -> None:
     if args.start_year < 2007 or args.end_year > 2025 or args.start_year > args.end_year:
         parser.error("El intervalo debe estar entre 2007 y 2025 y en orden ascendente")
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    names, all_codes = municipality_names(args.divipola)
+    names, all_codes = entity_names(args.divipola)
     weeks = {(year, number): start for year, number, start in
              weeks_in_range(args.start_year, args.end_year)}
     for year in range(args.start_year, args.end_year + 1):

@@ -36,4 +36,4 @@ df = spark.read.parquet(
 )
 ```
 
-La generación local con las entradas actuales produjo **226.195 filas y 141 columnas**. La unidad de cada fila es una combinación presente en SIVIGILA de municipio y semana epidemiológica; la salida no representa todas las semanas posibles de todos los municipios.
+La generación local con las entradas actuales produjo **227.113 filas y 141 columnas**, que suman **1.251.524 casos**. La unidad de cada fila es una combinación presente en SIVIGILA de entidad DIVIPOLA de residencia y semana epidemiológica; la salida no representa todas las semanas posibles de todas las entidades. Incluye las islas y áreas no municipalizadas aceptadas por el procesamiento semanal de SIVIGILA.

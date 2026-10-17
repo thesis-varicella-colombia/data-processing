@@ -6,6 +6,8 @@ Esta carpeta reúne códigos territoriales y geometrías del DANE. **DIVIPOLA** 
 
 El archivo `DIVIPOLA-_Códigos_municipios_20261007.csv` contiene códigos y nombres de departamentos y municipios, el tipo de unidad territorial y coordenadas de referencia. Los códigos deben leerse como **texto** para conservar los ceros iniciales.
 
+La copia local incluye `94343` (Barrancominas) y no incluye el código histórico `94663` (Mapiripana). El GeoJSON local también contiene `94343` y no `94663`. El procesamiento semanal de Sivigila homologa las notificaciones con residencia `94663` a `94343` para usar la geografía actual; esta decisión se documenta en la [ficha del resultado](../../processed/sivigila/README.md).
+
 Fuente: [DIVIPOLA - Códigos municipios, Datos Abiertos Colombia](https://www.datos.gov.co/Mapas-Nacionales/DIVIPOLA-C-digos-municipios/gdxc-w37w/about_data).
 
 Para descargar una copia, abre la página de la fuente, entra a la vista de datos y usa **Exportar → CSV**. La fecha del nombre del archivo local identifica la copia guardada en este repositorio; consulta la página para obtener una versión actualizada.
