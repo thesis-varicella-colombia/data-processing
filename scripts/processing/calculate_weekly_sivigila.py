@@ -91,7 +91,9 @@ def number(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series.str.strip(), errors="coerce")
 
 
-def add_metrics(df: pd.DataFrame, valid_codes: set[str]) -> pd.DataFrame:
+def add_metrics(df: pd.DataFrame, valid_codes: set[str], *,
+                notification_date: pd.Series | None = None,
+                symptom_date: pd.Series | None = None) -> pd.DataFrame:
     """Construye indicadores mutuamente interpretables sin imputar datos clínicos."""
     result = pd.DataFrame(index=df.index)
     result["casos_total"] = 1
@@ -162,8 +164,10 @@ def add_metrics(df: pd.DataFrame, valid_codes: set[str]) -> pd.DataFrame:
         known_occurrence & occurrence.ne(df.codigo_municipio))
     add("casos_ocurrencia_municipio_desconocido", colombia & ~known_occurrence)
 
-    notification_date = read_date(df.FEC_NOT)
-    symptom_date = read_date(df.INI_SIN)
+    if notification_date is None:
+        notification_date = read_date(df.FEC_NOT)
+    if symptom_date is None:
+        symptom_date = read_date(df.INI_SIN)
     week_start = df.inicio_semana_reportada
     in_reported_week = ((symptom_date >= week_start)
                         & (symptom_date < week_start + pd.Timedelta(days=7)))
@@ -323,8 +327,8 @@ def main() -> None:
         source = args.input_dir / f"Datos_{year}_831.csv"
         if not source.is_file():
             raise FileNotFoundError(source)
-        output = args.output_dir / f"sivigila_weekly_municipal_{year}.parquet"
-        report_path = args.output_dir / f"quality_report_{year}.json"
+        output = args.output_dir / "source_weekly_municipal" / f"sivigila_weekly_municipal_{year}.parquet"
+        report_path = args.output_dir / "source_weekly_municipal" / "quality_report" / f"quality_report_{year}.json"
         LOGGER.info("%s: %s -> %s", year, source, output)
         if args.validate_only:
             with source.open(encoding="utf-8-sig") as file:
@@ -337,7 +341,8 @@ def main() -> None:
             LOGGER.info("Ya existen Parquet e informe válidos; se omite %s", year)
             continue
         frame, report = process_year(source, year, names, all_codes, weeks)
-        args.output_dir.mkdir(parents=True, exist_ok=True)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
         part = output.with_name(output.name + ".part")
         report_part = report_path.with_name(report_path.name + ".part")
         try:

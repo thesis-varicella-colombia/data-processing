@@ -1,19 +1,46 @@
 # Ficha técnica: notificaciones semanales de varicela por municipio
 
+Hay tres agregados municipales semanales del evento 831. Cada carpeta tiene un
+README con filas por año epidemiológico, nulos, tipos y descripción de todas
+sus columnas:
+
+| Dataset | Semana que define la fila | Cobertura actual |
+| --- | --- | ---: |
+| [Origen](source_weekly_municipal/README.md) | `ANO`/`SEMANA` reportados en el CSV | 227.113 filas; 1.251.524 casos |
+| [Notificación](notification_weekly_municipal/README.md) | Semana calculada desde `FEC_NOT` | 223.714 filas; 1.251.524 casos |
+| [Síntomas](symptom_weekly_municipal/README.md) | Semana calculada desde `INI_SIN` | 218.963 filas; 1.195.823 casos |
+
+Los tres usan municipio de **residencia**, las mismas 85 columnas y el
+calendario domingo–sábado cuya semana 1 contiene el 4 de enero. En los dos
+agregados derivados, `ano_epidemiologico` y `semana_epidemiologica` proceden de
+la fecha individual, no de `ANO`/`SEMANA` del CSV. Se conservan los casos cuyas
+fechas caen en años epidemiológicos de borde: notificación tiene archivos
+2006–2026 y síntomas, 2006–2025. No se inventan filas de semanas sin casos.
+
 | Campo | Descripción |
 | --- | --- |
 | Fuente | [Microdatos Sivigila de varicela individual (evento 831)](../../raw/sivigila/README.md), CSV anuales `data/raw/sivigila/csv/Datos_AAAA_831.csv` |
 | Geografía | Todas las entidades del [DIVIPOLA local](../../raw/municipios/README.md): 1.103 municipios, 18 áreas no municipalizadas y San Andrés (`Isla`); se conserva el código de cinco dígitos como texto |
 | Periodo | Años epidemiológicos reportados 2007–2025 |
-| Unidad de análisis | Entidad DIVIPOLA de **residencia** incluida × `ANO`/`SEMANA` reportados por Sivigila |
-| Formato | `sivigila_weekly_municipal_AAAA.parquet`, uno por año, e informe `quality_report_AAAA.json` |
-| Generado por | [`scripts/processing/calculate_weekly_sivigila.py`](../../../scripts/processing/calculate_weekly_sivigila.py) |
+| Unidad de análisis | Entidad DIVIPOLA de **residencia** incluida × semana epidemiológica, definida según cada dataset |
+| Formato | Un Parquet por año epidemiológico de la clave de cada agregado; informes en `quality_report/` dentro de cada carpeta |
+| Generado por | [`calculate_weekly_sivigila.py`](../../../scripts/processing/calculate_weekly_sivigila.py) para origen y [`calculate_date_weekly_sivigila.py`](../../../scripts/processing/calculate_date_weekly_sivigila.py) para fechas |
 
 Los Parquet contienen **solo combinaciones entidad-semana con al menos una notificación**. `casos_total` es un conteo de registros del evento 831, no una tasa de incidencia ni una población completa de enfermos. No se deduplican registros porque el notebook [`sivigila_raw_explore.ipynb`](../../../notebooks/sivigila_raw_explore.ipynb) no definía una clave ni una regla de deduplicación verificable. No se imputan semanas sin registros como cero.
 
+## Fechas ausentes y diferencias de interpretación
+
+`FEC_NOT` es interpretable en los 1.251.524 casos incluidos. `INI_SIN` falta o
+no se puede interpretar en 55.701; por ello esos casos no tienen una semana de
+síntomas y quedan fuera del agregado correspondiente. En el CSV de 2013,
+`INI_SIN` se interpreta como mes/día/año; `FEC_NOT` y los demás años, como
+día/mes/año. El agregado de origen conserva los indicadores temporales
+calculados anteriormente con día/mes/año para ambas columnas; los dos
+agregados nuevos usan la lectura corregida para 2013.
+
 ## Variables de salida
 
-Las columnas de identificación son `codigo_municipio`, `nombre_municipio`, `codigo_departamento`, `ano_epidemiologico`, `semana_epidemiologica`, `inicio_semana` y `fin_semana`. Las fechas de inicio y fin se calculan con la convención del proyecto: domingo a sábado; la semana 1 contiene el 4 de enero. **El agrupamiento usa siempre `ANO` y `SEMANA` de Sivigila**, no recalcula la semana desde `FEC_NOT` ni desde `INI_SIN`.
+Las columnas de identificación son `codigo_municipio`, `nombre_municipio`, `codigo_departamento`, `ano_epidemiologico`, `semana_epidemiologica`, `inicio_semana` y `fin_semana`. Las fechas de inicio y fin se calculan con la convención del proyecto: domingo a sábado; la semana 1 contiene el 4 de enero. **Solo el agregado de origen usa `ANO` y `SEMANA` de Sivigila**; los otros dos recalculan la semana desde `FEC_NOT` o `INI_SIN`.
 
 Además de `casos_total`, hay conteos por sexo, hospitalización, edad, área, régimen de salud, pertenencia étnica, estrato, grupos poblacionales, fuente de notificación, municipio de notificación y de ocurrencia, demora entre síntomas y notificación, clasificación inicial, condición final, ajuste y fuerzas armadas. Todos los indicadores `casos_*` cuentan registros que cumplen su criterio; categorías de distintos grupos pueden superponerse. `prop_notificados_fuera_municipio` divide `casos_notificados_otro_municipio` entre `casos_total`. Los indicadores `casos_inicio_sintomas_fuera_semana_reportada`, `casos_inicio_sintomas_sin_fecha` y `casos_notificacion_fuera_semana_reportada` permiten revisar la coherencia temporal **por municipio y semana**.
 
@@ -37,18 +64,19 @@ Los 19 CSV contienen **1.257.304 registros**. Se incluyeron **1.251.524** en **2
 
 Las exclusiones restantes se desglosan en 1.768 registros con `00000` (procedencia desconocida), 3.409 con departamento conocido pero municipio desconocido y 603 residencias en el exterior. En el segundo grupo, el CSV conserva el departamento y marca explícitamente el municipio como desconocido mediante un código terminado en `000`, por ejemplo `05000` para Antioquia. Antes de homologar `88000 → 88001` había 3.754 registros en ese grupo; los 345 asignados a San Andrés redujeron el número de excluidos a 3.409. Tanto el DIVIPOLA local como `MGN_ADM_MPIO_GRAFICO.geojson` contienen Barrancominas (`94343`) y omiten el código histórico de Mapiripana (`94663`); la homologación permite el cruce espacial por código actual.
 
-Hay una discrepancia temporal que requiere atención antes de unir esta tabla con variables climáticas: **72.478** registros incluidos tienen `INI_SIN` fuera de la semana que resulta de interpretar su `ANO`/`SEMANA` con la convención domingo–sábado del proyecto; otros **55.701** no tienen fecha de inicio de síntomas interpretable. La discrepancia se concentra en 2007 y 2008. En cambio, **449.199** fechas de notificación caen fuera de la semana reportada. Esto sugiere que la relación entre semana reportada y fechas individuales no fue uniforme a lo largo de la serie; no permite asumir que `ANO`/`SEMANA` siempre represente la semana de notificación o la de síntomas. `inicio_semana` y `fin_semana` son la **interpretación del calendario del proyecto** para esos números, no una corrección de los registros del INS. Revise esta diferencia antes de atribuir exposiciones climáticas a casos de 2007–2008.
+Hay una discrepancia temporal que requiere atención antes de unir el agregado de origen con variables climáticas: sus informes actuales cuentan **72.478** registros incluidos con `INI_SIN` fuera de la semana que resulta de interpretar `ANO`/`SEMANA` con la convención domingo–sábado del proyecto; otros **55.701** no tienen fecha de inicio de síntomas interpretable. La cifra fuera de semana incluye un artefacto de lectura de fechas de 2013; los agregados por fecha corrigen ese formato. Además, **449.199** fechas de notificación caen fuera de la semana reportada. La relación entre semana reportada y fechas individuales no fue uniforme a lo largo de la serie. `inicio_semana` y `fin_semana` del agregado de origen son la **interpretación del calendario del proyecto** para los números reportados, no una corrección de los registros del INS. Revise esta diferencia antes de atribuir exposiciones climáticas a casos de 2007–2008.
 
 El informe también cuenta 13 registros incluidos con fecha o causa de defunción y `CON_FIN` distinto de 2. Se preserva el valor original de `CON_FIN`; la discrepancia no basta para reclasificar el desenlace. Los conteos son notificaciones de vigilancia, sujetos a cobertura y cambios administrativos; para calcular tasas se requiere población y una definición de caso explícita.
 
 ## Reproducción
 
-Desde la raíz del repositorio, con los CSV generados por [`convert_sivigila_excel_to_csv.py`](../../../scripts/processing/convert_sivigila_excel_to_csv.py) y dependencias de `scripts/requirements.txt`:
+Desde la raíz del repositorio, con los CSV generados por [`convert_sivigila_excel_to_csv.py`](../../../scripts/processing/convert_sivigila_excel_to_csv.py) y dependencias de `requirements.txt`:
 
 ```bash
 .venv/bin/python scripts/processing/calculate_weekly_sivigila.py --validate-only
 .venv/bin/python scripts/processing/calculate_weekly_sivigila.py
+.venv/bin/python scripts/processing/calculate_date_weekly_sivigila.py
 .venv/bin/python scripts/processing/calculate_weekly_sivigila.py --start-year 2025 --end-year 2025 --overwrite
 ```
 
-`--input-dir`, `--output-dir` y `--divipola` permiten cambiar rutas. `--start-year` y `--end-year` limitan los años. El script lee cada CSV por bloques, valida evento, año y semana, escribe primero `.part` y renombra el Parquet e informe al terminar. Al reanudar, omite pares Parquet/informe válidos; `--overwrite` los regenera. Los archivos `quality_report_AAAA.json` contienen recuentos de entrada, exclusiones, discrepancias temporales y códigos de residencia excluidos.
+`--input-dir`, `--output-dir` y `--divipola` permiten cambiar rutas. `--output-dir` indica la carpeta base de Sivigila. `--start-year` y `--end-year` limitan los **años de los CSV de entrada**. El script de origen lee cada CSV por bloques, valida evento, año y semana, escribe primero `.part` y renombra el Parquet e informe al terminar. Al reanudar, omite pares Parquet/informe válidos; `--overwrite` los regenera. Sus informes `source_weekly_municipal/quality_report/quality_report_AAAA.json` contienen recuentos de entrada, exclusiones, discrepancias temporales y códigos de residencia excluidos. El script de fechas admite `--mode notification`, `--mode symptom` o `--mode both` (predeterminado) y escribe un resumen de calidad en el `quality_report/` de cada salida.

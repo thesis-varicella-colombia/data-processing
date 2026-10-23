@@ -41,7 +41,7 @@ El [catálogo general](data/README.md) reúne variables, unidades y periodos. Es
 | Derivado | [Precipitación ERA5-Land](data/processed/climate/precipitation/README.md) | `precipitation_weekly_municipal_AAAA.parquet` |
 | Derivado | [Clima estimado para Providencia](data/processed/climate/providencia/README.md) | Temperatura, humedad y precipitación semanales separadas |
 | Derivado | [Precipitación CHIRPS municipal](data/processed/chirps_precipitation/README.md) | `chirps_precipitation_weekly_municipal_sat_AAAA.parquet` |
-| Derivado | [Casos Sivigila municipales](data/processed/sivigila/README.md) | `sivigila_weekly_municipal_AAAA.parquet` |
+| Derivado | [Casos Sivigila municipales](data/processed/sivigila/README.md) | `source_weekly_municipal/`, `notification_weekly_municipal/` y `symptom_weekly_municipal/` |
 | Derivado | [Población municipal](data/processed/population/README.md) | `population_municipal_2007_2025.csv` |
 | Derivado | [Coberturas de varicela](data/processed/vaccine_coverage/README.md) | `coberturas_municipales_2016_2025.csv` |
 | Final | [Integración semanal municipal](data/processed/integration_data/README.md) | `sivigila_integrado_semanal_municipal.parquet/` |
@@ -92,11 +92,12 @@ Para reconstruir también la serie histórica adicional `rnl`, repita los dos ú
 
 ### 4. Procesar los Excel de Sivigila
 
-Los 19 archivos `Datos_AAAA_831.xlsx` deben estar en `data/raw/sivigila/excel/`. Primero se convierten a CSV y después se agregan por municipio, año y semana **reportados** en los microdatos. Consulte las fichas de [origen](data/raw/sivigila/README.md) y [agregado](data/processed/sivigila/README.md).
+Los 19 archivos `Datos_AAAA_831.xlsx` deben estar en `data/raw/sivigila/excel/`. Primero se convierten a CSV y después se generan tres agregados por municipio y semana: la reportada en `ANO`/`SEMANA`, la de notificación y la de inicio de síntomas. Consulte las fichas de [origen](data/raw/sivigila/README.md) y [agregados](data/processed/sivigila/README.md).
 
 ```bash
 .venv/bin/python scripts/processing/convert_sivigila_excel_to_csv.py
 .venv/bin/python scripts/processing/calculate_weekly_sivigila.py
+.venv/bin/python scripts/processing/calculate_date_weekly_sivigila.py
 ```
 
 ### 5. Procesar población y vacunación

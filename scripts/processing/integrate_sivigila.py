@@ -83,7 +83,7 @@ def add_incidence(df, F):
 
 def join_population_and_vaccination(spark, F):
     sivigila_files = yearly_files(
-        REPO_ROOT / "data/processed/sivigila",
+        REPO_ROOT / "data/processed/sivigila/source_weekly_municipal",
         "sivigila_weekly_municipal_{year}.parquet",
     )
     # Los tipos de algunas columnas cambian entre años; se unen por nombre.

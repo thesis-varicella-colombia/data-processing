@@ -6,7 +6,7 @@
 
 | Fuente | Ruta | Unión |
 | --- | --- | --- |
-| Casos semanales de SIVIGILA | `data/processed/sivigila/sivigila_weekly_municipal_AAAA.parquet` | Tabla base |
+| Casos semanales de SIVIGILA | `data/processed/sivigila/source_weekly_municipal/sivigila_weekly_municipal_AAAA.parquet` | Tabla base por `ANO`/`SEMANA` reportados |
 | Población municipal | `data/processed/population/population_municipal_2007_2025.csv` | Municipio y año epidemiológico |
 | Cobertura de vacunación | `data/processed/vaccine_coverage/coberturas_municipales_2016_2025.csv` | Municipio y año epidemiológico |
 | Precipitación CHIRPS satelital | `data/processed/chirps_precipitation/chirps_precipitation_weekly_municipal_sat_AAAA.parquet` | Municipio, año y semana epidemiológica |
