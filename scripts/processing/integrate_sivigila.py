@@ -13,6 +13,21 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 YEARS = range(2007, 2026)
 WEEK_KEYS = ["codigo_municipio", "ano_epidemiologico", "semana_epidemiologica"]
 PROVIDENCIA_CODE = "88564"
+SIVIGILA_SOURCES = {
+    "source": ("source_weekly_municipal", "sivigila_weekly_municipal_{year}.parquet"),
+    "notification": (
+        "notification_weekly_municipal",
+        "sivigila_notification_weekly_municipal_{year}.parquet",
+    ),
+    "symptom": (
+        "symptom_weekly_municipal",
+        "sivigila_symptom_weekly_municipal_{year}.parquet",
+    ),
+}
+OUTPUT_NAMES = {
+    source: f"sivigila_integrado_{source}_semanal_municipal.parquet"
+    for source in SIVIGILA_SOURCES
+}
 HUMIDITY_COLUMNS = [
     "humedad_relativa_media_pct",
     "fraccion_area_con_datos_humedad_relativa_media_pct",
@@ -39,6 +54,17 @@ def yearly_files(directory: Path, pattern: str) -> list[Path]:
     if missing:
         raise FileNotFoundError(f"Faltan archivos de entrada: {missing}")
     return files
+
+
+def sivigila_files(week_source: str) -> list[Path]:
+    """Incluye años de borde en los agregados basados en fechas individuales."""
+    directory_name, pattern = SIVIGILA_SOURCES[week_source]
+    directory = REPO_ROOT / "data/processed/sivigila" / directory_name
+    required = yearly_files(directory, pattern)
+    if week_source == "source":
+        return required
+    # Incluye cualquier año epidemiológico de borde presente en los Parquet.
+    return sorted(directory.glob(pattern.format(year="*")))
 
 
 def read_yearly(spark, directory: Path, pattern: str):
@@ -81,15 +107,12 @@ def add_incidence(df, F):
     return df
 
 
-def join_population_and_vaccination(spark, F):
-    sivigila_files = yearly_files(
-        REPO_ROOT / "data/processed/sivigila/source_weekly_municipal",
-        "sivigila_weekly_municipal_{year}.parquet",
-    )
+def join_population_and_vaccination(spark, F, week_source: str):
+    input_files = sivigila_files(week_source)
     # Los tipos de algunas columnas cambian entre años; se unen por nombre.
     sivigila = reduce(
         lambda left, right: left.unionByName(right),
-        (spark.read.parquet(str(path.resolve())) for path in sivigila_files),
+        (spark.read.parquet(str(path.resolve())) for path in input_files),
     )
 
     population_path = (
@@ -279,13 +302,17 @@ def main() -> None:
     parser.add_argument("--master", default="local[2]", help="Spark master")
     parser.add_argument("--driver-memory", default="2g", help="Spark driver memory")
     parser.add_argument(
+        "--week-source", choices=[*SIVIGILA_SOURCES, "all"], default="all",
+        help="Semana de SIVIGILA para la clave de la integración",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
-        default=REPO_ROOT
-        / "data/processed/integration_data/sivigila_integrado_semanal_municipal.parquet",
-        help="Output Spark Parquet directory; existing data is overwritten",
+        help="Directorio Parquet personalizado; requiere una sola --week-source",
     )
     args = parser.parse_args()
+    if args.output is not None and args.week_source == "all":
+        parser.error("--output requiere --week-source source, notification o symptom")
     configure_java()
     from pyspark.sql import SparkSession, functions as F
 
@@ -299,27 +326,30 @@ def main() -> None:
     )
     spark.sparkContext.setLogLevel("ERROR")
     try:
-        integrated = join_population_and_vaccination(spark, F)
-        integrated = join_chirps(integrated, spark, F)
-        integrated = join_humidity(integrated, spark, F)
-        integrated = join_climate_variable(
-            integrated,
-            spark,
-            F,
-            variable="precipitation",
-            value_column="precipitacion_total_mm",
-        )
-        integrated = join_climate_variable(
-            integrated,
-            spark,
-            F,
-            variable="temperature",
-            value_column="temperatura_media_c",
-        )
-        output = args.output.expanduser().resolve()
-        output.parent.mkdir(parents=True, exist_ok=True)
-        integrated.coalesce(4).write.mode("overwrite").parquet(str(output))
-        print(f"Dataset integrado guardado en {output}")
+        sources = SIVIGILA_SOURCES if args.week_source == "all" else [args.week_source]
+        for week_source in sources:
+            integrated = join_population_and_vaccination(spark, F, week_source)
+            integrated = join_chirps(integrated, spark, F)
+            integrated = join_humidity(integrated, spark, F)
+            integrated = join_climate_variable(
+                integrated,
+                spark,
+                F,
+                variable="precipitation",
+                value_column="precipitacion_total_mm",
+            )
+            integrated = join_climate_variable(
+                integrated,
+                spark,
+                F,
+                variable="temperature",
+                value_column="temperatura_media_c",
+            )
+            output = (args.output or REPO_ROOT / "data/processed/integration_data"
+                      / OUTPUT_NAMES[week_source]).expanduser().resolve()
+            output.parent.mkdir(parents=True, exist_ok=True)
+            integrated.coalesce(4).write.mode("overwrite").parquet(str(output))
+            print(f"Dataset integrado {week_source} guardado en {output}")
     finally:
         spark.stop()
 

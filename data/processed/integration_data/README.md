@@ -1,19 +1,43 @@
-# Dataset integrado semanal municipal
+# Datasets integrados semanales municipales
 
-`sivigila_integrado_semanal_municipal.parquet/` es un **dataset Parquet de Spark** (un directorio con archivos `part-*.parquet`), producido por [`scripts/processing/integrate_sivigila.py`](../../../scripts/processing/integrate_sivigila.py). El script reproduce las transformaciones de [`notebooks/integration_sivigila.ipynb`](../../../notebooks/integration_sivigila.ipynb) y sobrescribe la salida al ejecutarse. La tabla conserva las filas de SIVIGILA; las demás fuentes se incorporan mediante uniones izquierdas.
+[`scripts/processing/integrate_sivigila.py`](../../../scripts/processing/integrate_sivigila.py)
+genera tres **datasets Parquet de Spark** (directorios con archivos
+`part-*.parquet`). Comparten las 141 columnas y las mismas uniones izquierdas
+con población, vacunación, CHIRPS y ERA5; cambia la semana que define cada
+fila de SIVIGILA:
+
+| Salida | Base SIVIGILA | Filas | Casos | Años epidemiológicos |
+| --- | --- | ---: | ---: | --- |
+| `sivigila_integrado_source_semanal_municipal.parquet/` | `ANO`/`SEMANA` reportados | 227.113 | 1.251.524 | 2007–2025 |
+| `sivigila_integrado_notification_semanal_municipal.parquet/` | Semana de `FEC_NOT` | 223.714 | 1.251.524 | 2006–2026 |
+| `sivigila_integrado_symptom_semanal_municipal.parquet/` | Semana de `INI_SIN` | 218.963 | 1.195.823 | 2006–2025 |
+
+La variante `source` corresponde al resultado original y al flujo del
+[`notebook de integración`](../../../notebooks/integration_sivigila.ipynb).
+Las variantes `notification` y `symptom` usan las mismas transformaciones con
+otro agregado semanal como tabla base. Los 55.701 casos sin `INI_SIN`
+interpretable quedan fuera de `symptom`. Las salidas conservan semanas de 2006
+y 2026 cuando alguna fecha individual pertenece a esos años epidemiológicos.
 
 ## Entradas y uniones
 
 | Fuente | Ruta | Unión |
 | --- | --- | --- |
-| Casos semanales de SIVIGILA | `data/processed/sivigila/source_weekly_municipal/sivigila_weekly_municipal_AAAA.parquet` | Tabla base por `ANO`/`SEMANA` reportados |
+| Casos semanales de SIVIGILA | `data/processed/sivigila/{source,notification,symptom}_weekly_municipal/` | Tabla base elegida por `--week-source`; municipio de residencia y semana definida por cada fuente |
 | Población municipal | `data/processed/population/population_municipal_2007_2025.csv` | Municipio y año epidemiológico |
 | Cobertura de vacunación | `data/processed/vaccine_coverage/coberturas_municipales_2016_2025.csv` | Municipio y año epidemiológico |
 | Precipitación CHIRPS satelital | `data/processed/chirps_precipitation/chirps_precipitation_weekly_municipal_sat_AAAA.parquet` | Municipio, año y semana epidemiológica |
 | Humedad, precipitación y temperatura ERA5-Land | `data/processed/climate/{humidity,precipitation,temperature}/` | Municipio, año y semana epidemiológica |
 | Estimaciones de Providencia | `data/processed/climate/providencia/{humidity,precipitation,temperature}/` | Municipio, año y semana epidemiológica |
 
-Se esperan archivos anuales de 2007 a 2025. Las tasas `incidencia_*_100k` dividen los casos por la población correspondiente y multiplican por 100.000. La cobertura de vacunación empieza en 2016; las filas sin coincidencia permanecen en la tabla con valores nulos en las columnas añadidas.
+Se esperan entradas anuales de población y clima de 2007 a 2025. Los
+agregados por fecha incluyen además los archivos de borde que existan. Las
+tasas `incidencia_*_100k` dividen los casos por la población correspondiente
+y multiplican por 100.000. La cobertura de vacunación empieza en 2016; las
+filas sin coincidencia permanecen con valores nulos en las columnas añadidas.
+En particular, los años 2006 y 2026 no tienen población ni clima de esas
+series. Los totales de casos y filas se conservan al integrar: ninguna unión
+elimina filas de SIVIGILA.
 
 Providencia (`88564`) carece de valores climáticos en ERA5-Land. Sus valores nulos se completan con los archivos separados de ERA5 atmosférico horario. Para cada variable se conserva la fracción de área con datos de la fuente utilizada y se incluyen columnas `fuente_*` y `es_estimacion_*`. Estas series son **estimaciones de otra fuente y resolución**, no observaciones locales ni valores directamente equivalentes a ERA5-Land. CHIRPS permanece como una precipitación separada (`precipitacion_total_mm_chirps_sat`).
 
@@ -23,35 +47,64 @@ Desde la raíz del repositorio, con el entorno del proyecto y Java 17:
 
 ```bash
 .venv/bin/python scripts/processing/integrate_sivigila.py
+.venv/bin/python scripts/processing/integrate_sivigila.py --week-source notification
 ```
 
-El script toma las entradas relativas a la raíz del repositorio, independientemente del directorio de ejecución. Admite `--master`, `--driver-memory` y `--output` para ajustar Spark o la ruta de salida. Escribe el dataset con compresión Parquet predeterminada de Spark en `data/processed/integration_data/sivigila_integrado_semanal_municipal.parquet/`.
+Sin `--week-source`, el script genera las tres variantes y sobrescribe cada
+directorio de salida. `--week-source source`, `notification` o `symptom`
+selecciona una sola. El script toma las entradas relativas a la raíz del
+repositorio, independientemente del directorio de ejecución. Admite `--master`
+y `--driver-memory`; `--output` exige seleccionar una variante y permite usar
+otro directorio Parquet.
 
 ```python
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
 df = spark.read.parquet(
-    "data/processed/integration_data/sivigila_integrado_semanal_municipal.parquet"
+    "data/processed/integration_data/sivigila_integrado_notification_semanal_municipal.parquet"
 )
 ```
 
-La generación local con las entradas actuales produjo **227.113 filas y 141 columnas**, que suman **1.251.524 casos**. La unidad de cada fila es una combinación presente en SIVIGILA de entidad DIVIPOLA de residencia y semana epidemiológica; la salida no representa todas las semanas posibles de todas las entidades. Incluye las islas y áreas no municipalizadas aceptadas por el procesamiento semanal de SIVIGILA.
+Cada fila representa una combinación presente de entidad DIVIPOLA de
+residencia y semana epidemiológica. La salida no contiene todas las semanas
+posibles de todas las entidades. Incluye las islas y áreas no municipalizadas
+aceptadas por el procesamiento semanal de SIVIGILA.
+
+### Cobertura de algunas uniones en los archivos actuales
+
+| Variante | Filas sin `poblacion_total` | Filas sin `precipitacion_total_mm_chirps_sat` |
+| --- | ---: | ---: |
+| `source` | 4 | 909 |
+| `notification` | 214 | 1.079 |
+| `symptom` | 32 | 911 |
+
+Estos son nulos observados en las tablas generadas, no casos perdidos. Las
+claves de unión de población y vacunación usan el **año epidemiológico de la
+variante**; las de CHIRPS y clima usan también su semana. Por eso cambiar la
+semana de SIVIGILA puede cambiar la cobertura de las variables añadidas.
 
 ## Diccionario de columnas
 
-Los tipos siguientes corresponden al esquema del **Parquet generado actualmente**: `string` es texto, `date32` es fecha sin hora, `bool` es booleano, `double` es número de punto flotante y `int8`/`int16`/`int64` son enteros de 8/16/64 bits. En particular, algunos conteos `casos_*` se almacenan como `int8` por su rango observado; siguen siendo **conteos**, no indicadores booleanos. Los conteos de SIVIGILA se refieren a las notificaciones de la fila (entidad de residencia y semana reportada). Las categorías de distintos grupos pueden superponerse; los datos agregados por año o semana se repiten en las filas correspondientes. Los valores de fuentes unidas pueden ser nulos cuando no existe una coincidencia.
+Los tipos de la tabla corresponden a la variante **`source`**; `notification`
+y `symptom` tienen los mismos nombres de columna, pero algunos conteos
+`casos_*` se almacenan con otro ancho entero. `string` es texto, `date32` es
+fecha sin hora, `bool` es booleano, `double` es número de punto flotante y
+`int8`/`int16`/`int64` son enteros. Todos los campos `casos_*` siguen siendo
+**conteos**. Se refieren a los casos de la entidad de residencia y la semana
+de la variante elegida. Las categorías de distintos grupos pueden superponerse.
+Los valores de fuentes unidas pueden ser nulos cuando no hay coincidencia.
 
 ### Municipio y semana
 
 | Columna | Tipo | Descripción |
 | --- | --- | --- |
 | `codigo_municipio` | `string` | Código DIVIPOLA de cinco dígitos de la entidad de residencia; incluye municipios, islas y áreas no municipalizadas aceptadas. |
-| `ano_epidemiologico` | `int64` | Año epidemiológico `ANO` reportado por SIVIGILA; clave de unión con población y vacunación. |
-| `semana_epidemiologica` | `int16` | Número de semana `SEMANA` reportado por SIVIGILA. |
+| `ano_epidemiologico` | `int64` | Año epidemiológico reportado (`source`) o calculado desde la fecha individual (`notification`/`symptom`); clave de unión con población y vacunación. |
+| `semana_epidemiologica` | `int16` | Semana reportada (`source`) o calculada desde la fecha individual (`notification`/`symptom`). |
 | `nombre_municipio` | `string` | Nombre de la entidad de residencia según el DIVIPOLA local. |
 | `codigo_departamento` | `string` | Código DIVIPOLA de dos dígitos del departamento de residencia. |
-| `inicio_semana` | `date32` | Domingo inicial de la semana reportada, según el calendario epidemiológico del proyecto. |
+| `inicio_semana` | `date32` | Domingo inicial de la semana de la variante, según el calendario epidemiológico del proyecto. |
 | `fin_semana` | `date32` | Sábado final de esa semana, inclusive; puede caer en otro año calendario. |
 
 ### Casos

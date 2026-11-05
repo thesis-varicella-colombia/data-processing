@@ -1,6 +1,6 @@
 # Datos semanales de varicela y clima en Colombia
 
-Este repositorio construye una tabla municipio × semana epidemiológica para analizar notificaciones de varicela individual (Sivigila, evento 831) entre 2007 y 2025 junto con población, vacunación y clima. El resultado final se genera con [`scripts/processing/integrate_sivigila.py`](scripts/processing/integrate_sivigila.py) en [`data/processed/integration_data/`](data/processed/integration_data/README.md). El [catálogo de datos](data/README.md) describe las variables y unidades de las fuentes y productos.
+Este repositorio construye tablas municipio × semana epidemiológica para analizar notificaciones de varicela individual (Sivigila, evento 831) junto con población, vacunación y clima. Las semanas pueden corresponder al periodo reportado en el CSV, a la fecha de notificación o al inicio de síntomas. Los tres resultados finales se generan con [`scripts/processing/integrate_sivigila.py`](scripts/processing/integrate_sivigila.py) en [`data/processed/integration_data/`](data/processed/integration_data/README.md). El [catálogo de datos](data/README.md) describe las variables y unidades de las fuentes y productos.
 
 ## Requisitos y archivos que se obtienen manualmente
 
@@ -44,7 +44,7 @@ El [catálogo general](data/README.md) reúne variables, unidades y periodos. Es
 | Derivado | [Casos Sivigila municipales](data/processed/sivigila/README.md) | `source_weekly_municipal/`, `notification_weekly_municipal/` y `symptom_weekly_municipal/` |
 | Derivado | [Población municipal](data/processed/population/README.md) | `population_municipal_2007_2025.csv` |
 | Derivado | [Coberturas de varicela](data/processed/vaccine_coverage/README.md) | `coberturas_municipales_2016_2025.csv` |
-| Final | [Integración semanal municipal](data/processed/integration_data/README.md) | `sivigila_integrado_semanal_municipal.parquet/` |
+| Final | [Integraciones semanales municipales](data/processed/integration_data/README.md) | `sivigila_integrado_{source,notification,symptom}_semanal_municipal.parquet/` |
 
 Los [scripts de descarga](scripts/download/) obtienen ERA5 y CHIRPS; los [scripts de procesamiento](scripts/processing/) generan las tablas. Los [notebooks](notebooks/) sirven para exploración y contienen la [integración interactiva](notebooks/integration_sivigila.ipynb). La ruta reproducible para la salida final es el script de integración.
 
@@ -119,7 +119,7 @@ Ejecute este paso **después** de completar todas las salidas anteriores:
 .venv/bin/python scripts/processing/integrate_sivigila.py
 ```
 
-El script verifica la presencia de los archivos anuales requeridos, calcula diez tasas de incidencia por 100.000 habitantes y une población y vacunación por municipio y año; CHIRPS y clima se unen por municipio, año y semana epidemiológica. Completa solo los valores climáticos nulos de Providencia (`88564`) con sus estimaciones separadas y conserva columnas de fuente, cobertura y carácter estimado. Escribe un **directorio Parquet de Spark** en `data/processed/integration_data/sivigila_integrado_semanal_municipal.parquet/`, sobrescribiendo la salida anterior. La [ficha del producto final](data/processed/integration_data/README.md) explica cómo leerlo.
+El script verifica las entradas requeridas y genera las tres integraciones de forma predeterminada. Calcula diez tasas de incidencia por 100.000 habitantes y une población y vacunación por municipio y año; CHIRPS y clima se unen por municipio, año y semana epidemiológica. Completa solo los valores climáticos nulos de Providencia (`88564`) con sus estimaciones separadas y conserva columnas de fuente, cobertura y carácter estimado. Cada resultado es un **directorio Parquet de Spark** en `data/processed/integration_data/`; el script sobrescribe la salida correspondiente. `--week-source source`, `notification` o `symptom` limita la ejecución a una variante. La [ficha de los productos finales](data/processed/integration_data/README.md) explica cómo leerlos y cómo interpretar los años de borde.
 
 ## Interpretación y comprobación
 
