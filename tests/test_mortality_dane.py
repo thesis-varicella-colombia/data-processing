@@ -100,6 +100,21 @@ class MortalityExtractionTest(unittest.TestCase):
         self.assertEqual(result.iloc[0]["estado"], "sin desglose")
         self.assertTrue(pd.isna(result.iloc[0]["diferencia"]))
 
+    def test_bogota_department_total_is_copied_as_municipality(self):
+        for year in range(2009, 2019):
+            self.setUp()
+            self.rows[7][0] = f"AÑO {year}"
+            self.sheet.name = "11"
+            self.rows[9][0] = "Bogotá"
+            self.rows = self.rows[:13]
+            self.sheet.nrows = len(self.rows)
+            if year >= 2015:
+                self.set_expanded_age_groups(year)
+            frame = read_sheet(self.sheet, year)
+            self.assertEqual(frame.codigo_municipio.tolist(), ["11", "11001"])
+            self.assertEqual(frame.iloc[0][VALUE_COLUMNS].tolist(), frame.iloc[1][VALUE_COLUMNS].tolist())
+            self.assertEqual(validate_totals(frame).iloc[0]["estado"], "coincide")
+
     def test_year_is_checked_against_the_heading(self):
         with self.assertRaisesRegex(ValueError, "se esperaba el año 2009"):
             read_sheet(self.sheet, 2009)
@@ -190,14 +205,14 @@ class MortalityExtractionTest(unittest.TestCase):
         frame = read_all_mortality(DEFAULT_INPUT_DIR)
         self.assertEqual(frame.columns.tolist(), OUTPUT_COLUMNS)
         self.assertEqual(set(frame["ano"]), set(YEARS))
-        self.assertEqual(frame.shape, (21626, 30))
+        self.assertEqual(frame.shape, (21636, 30))
         validation = validate_totals(frame)
         self.assertEqual(len(validation), 35 * len(YEARS))
         for year in YEARS:
             with self.subTest(year=year):
                 annual = validation.loc[validation["ano"].eq(year)]
-                self.assertEqual(annual["estado"].eq("coincide").sum(), 34 if year == 2008 or year >= 2019 else 33)
-                self.assertEqual(annual["estado"].eq("sin desglose").sum(), 1 if year == 2008 or year >= 2019 else 2)
+                self.assertEqual(annual["estado"].eq("coincide").sum(), 34)
+                self.assertEqual(annual["estado"].eq("sin desglose").sum(), 1)
                 departments = annual.loc[
                     annual["codigo_departamento"].notna()
                     & annual["filas_desglose"].gt(0)
@@ -228,7 +243,13 @@ class MortalityExtractionTest(unittest.TestCase):
                             expected.append([*row[2:21], *older, *row[30:33]])
                 finally:
                     workbook.release_resources()
-                self.assertEqual(frame[VALUE_COLUMNS].to_numpy().tolist(), expected)
+                if 2009 <= year <= 2018:
+                    bogota = frame.loc[frame.codigo_departamento.eq("11") & frame.nombre_municipio.eq("Total"), VALUE_COLUMNS]
+                    # La fila agregada está dentro del bloque departamental, no al final.
+                    actual = frame.loc[~(frame.codigo_departamento.eq("11") & frame.codigo_municipio.eq("11001")), VALUE_COLUMNS]
+                else:
+                    actual = frame[VALUE_COLUMNS]
+                self.assertEqual(actual.to_numpy().tolist(), expected)
 
 
 class ModernMortalityTest(unittest.TestCase):
@@ -346,7 +367,13 @@ class ModernMortalityTest(unittest.TestCase):
                         workbook.close()
                     else:
                         workbook.release_resources()
-                self.assertEqual(frame[VALUE_COLUMNS].to_numpy().tolist(), expected)
+                if 2009 <= year <= 2018:
+                    bogota = frame.loc[frame.codigo_departamento.eq("11") & frame.nombre_municipio.eq("Total"), VALUE_COLUMNS]
+                    # La fila agregada está dentro del bloque departamental, no al final.
+                    actual = frame.loc[~(frame.codigo_departamento.eq("11") & frame.codigo_municipio.eq("11001")), VALUE_COLUMNS]
+                else:
+                    actual = frame[VALUE_COLUMNS]
+                self.assertEqual(actual.to_numpy().tolist(), expected)
 
 
 if __name__ == "__main__":

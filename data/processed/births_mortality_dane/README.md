@@ -8,7 +8,8 @@ Las fichas técnicas se guardan junto a cada conjunto de datos:
 | Nacimientos procesados | [Parquet consolidado 2008–2025](births/README.md) |
 | Defunciones originales | [Excel y versiones de entrada](../../raw/births_mortality_dane/mortality/README.md) |
 | Defunciones procesadas | [Totales territoriales de 2008–2025](mortality/README.md) |
+| Integración de nacimientos y mortalidad infantil | [Saldo de sobrevivientes de un año y validación de unión](integration/README.md) |
 
-Los archivos procesados se encuentran en `births/births.parquet` y
-`mortality/mortality.parquet`. Sus fichas describen las variables,
+Los archivos procesados se encuentran en `births/births.parquet`,
+`mortality/mortality.parquet` e `integration/surviving_infants.parquet`. Sus fichas describen las variables,
 la generación y las validaciones.

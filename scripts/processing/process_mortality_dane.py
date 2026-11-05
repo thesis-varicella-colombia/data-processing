@@ -262,7 +262,18 @@ def read_sheet(sheet, year: int = 2008) -> pd.DataFrame:
         harmonized = harmonize_counts(values, column_groups, context)
         rows.append([year, department_code, department,
                      municipality_code, municipality, *harmonized])
-    return pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+    frame = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+    # Bogotá es una sola entidad: en estos años la hoja solo publica su total.
+    if department_code == "11" and 2009 <= year <= 2018:
+        if not frame["codigo_municipio"].eq("11001").any():
+            totals = frame.loc[frame["nombre_municipio"].eq("Total")]
+            if len(totals) != 1:
+                raise ValueError(f"{year}: se esperaba un único total de Bogotá")
+            municipality = totals.copy()
+            municipality["codigo_municipio"] = "11001"
+            municipality["nombre_municipio"] = department
+            frame = pd.concat([frame, municipality], ignore_index=True)
+    return frame
 
 
 def read_mortality(source: Path) -> pd.DataFrame:

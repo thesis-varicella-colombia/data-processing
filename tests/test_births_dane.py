@@ -65,12 +65,17 @@ class BirthsTotalsTest(unittest.TestCase):
         self.assertEqual(set(frame["ano"]), set(YEARS))
         self.assertFalse(frame["codigo_municipio"].isna().any())
         self.assertFalse(frame["nombre_municipio"].eq("Total Nacional").any())
+        for year in range(2008, 2020):
+            bogota = frame.loc[frame.ano.eq(year) & frame.codigo_departamento.eq("11").fillna(False)]
+            total = bogota.loc[bogota.nombre_municipio.eq("Total")].iloc[0]
+            municipality = bogota.loc[bogota.codigo_municipio.eq("11001")].iloc[0]
+            self.assertEqual(total["total"], municipality["total"])
         result = validate_totals(frame)
         self.assertEqual(len(result), 35 * len(YEARS))
         for year in YEARS:
             annual = result.loc[result["ano"].eq(year)]
-            self.assertEqual(annual["estado"].eq("coincide").sum(), 33 if year < 2020 else 34)
-            self.assertEqual(annual["estado"].eq("sin desglose").sum(), 2 if year < 2020 else 1)
+            self.assertEqual(annual["estado"].eq("coincide").sum(), 34)
+            self.assertEqual(annual["estado"].eq("sin desglose").sum(), 1)
         modern_municipalities = frame.loc[
             frame["ano"].ge(2020) & frame["codigo_municipio"].str.fullmatch(r"\d{5}")
         ]

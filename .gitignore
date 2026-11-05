@@ -116,3 +116,6 @@ __pycache__/
 /data/raw/births_mortality_dane/mortality/defunciones-no-fetales-2019-cuadro-definitivo-2019.xls
 /data/processed/births_mortality_dane/births/births.parquet
 /data/processed/births_mortality_dane/mortality/mortality.parquet
+/data/processed/births_mortality_dane/integration/*.parquet
+/data/processed/births_mortality_dane/integration/unmatched_rows.csv
+/data/processed/births_mortality_dane/integration/quality_report.json

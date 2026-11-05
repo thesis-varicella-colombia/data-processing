@@ -268,6 +268,15 @@ def read_births(source: Path) -> pd.DataFrame:
             elif normalize(sheet.name) == "sin_informacion":
                 frame["codigo_municipio"] = "-2"
             frame = frame[OUTPUT_COLUMNS]
+            if sheet.name == "11" and 2008 <= year <= 2019:
+                if not frame["codigo_municipio"].eq("11001").any():
+                    totals = frame.loc[frame["nombre_municipio"].str.casefold().eq("total")]
+                    if len(totals) != 1:
+                        raise ValueError(f"{year}: se esperaba un único total de Bogotá")
+                    municipality = totals.copy()
+                    municipality["codigo_municipio"] = "11001"
+                    municipality["nombre_municipio"] = department
+                    frame = pd.concat([frame, municipality], ignore_index=True)
             frames.append(frame)
             LOGGER.debug("%s, %s (%s): %d filas", year, sheet.name, department, len(frame))
     finally:

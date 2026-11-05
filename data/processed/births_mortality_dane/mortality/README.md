@@ -4,7 +4,7 @@
 | --- | --- |
 | Entrada | Dieciocho libros anuales de la [carpeta raw de mortalidad](../../../raw/births_mortality_dane/mortality/) |
 | Documentación de entrada | [Ficha técnica de raw](../../../raw/births_mortality_dane/mortality/README.md): inventario, origen, versiones y estructura de los archivos |
-| Salida | `mortality.parquet`, un único archivo con **21.626 filas y 30 columnas** |
+| Salida | `mortality.parquet`, un único archivo con **21.636 filas y 30 columnas** |
 | Periodo | 2008–2025 |
 | Unidad | Total de defunciones de todas las causas por municipio/país o departamento/categoría y año |
 | Procesador | [`process_mortality_dane.py`](../../../../scripts/processing/process_mortality_dane.py) |
@@ -125,25 +125,25 @@ y C14 en 2018–2019. En 2020–2025 compara la suma municipal con F de la fila
 que identifica cada departamento/categoría. Incluye países y filas municipales
 sin información; no compara los otros conteos por sexo y edad.
 
-Resultado actual: **602 comparaciones coincidentes, ninguna diferencia y 28
+Resultado actual: **612 comparaciones coincidentes, ninguna diferencia y 18
 grupos sin desglose**. La categoría sin información no tiene desglose en
-ningún año. Bogotá incluye el municipio `11001` en 2008 y desde 2019, pero solo el
-total en 2009–2018; esas filas no se comparan contra cero. La hoja `00` queda fuera
+ningún año. Bogotá incluye `11001` en todos los años procesados; en 2009–2018
+la fila municipal se deriva del total departamental. La hoja `00` queda fuera
 del Parquet para evitar duplicar el total nacional.
 
 | Año | Filas | Defunciones, suma de filas `Total` |
 | --- | ---: | ---: |
 | 2008 | 1.200 | 196.943 |
-| 2009 | 1.207 | 196.933 |
-| 2010 | 1.215 | 200.524 |
-| 2011 | 1.211 | 195.823 |
-| 2012 | 1.205 | 199.756 |
-| 2013 | 1.211 | 203.071 |
-| 2014 | 1.202 | 210.051 |
-| 2015 | 1.207 | 219.472 |
-| 2016 | 1.208 | 223.078 |
-| 2017 | 1.197 | 227.624 |
-| 2018 | 1.189 | 236.932 |
+| 2009 | 1.208 | 196.933 |
+| 2010 | 1.216 | 200.524 |
+| 2011 | 1.212 | 195.823 |
+| 2012 | 1.206 | 199.756 |
+| 2013 | 1.212 | 203.071 |
+| 2014 | 1.203 | 210.051 |
+| 2015 | 1.208 | 219.472 |
+| 2016 | 1.209 | 223.078 |
+| 2017 | 1.198 | 227.624 |
+| 2018 | 1.190 | 236.932 |
 | 2019 | 1.192 | 243.396 |
 | 2020 | 1.188 | 300.853 |
 | 2021 | 1.195 | 363.089 |
@@ -160,3 +160,11 @@ formatos de 2008–2025. El consolidado conserva las versiones presentes en
 raw; no añade registros tardíos ni corrige versiones anteriores. El origen,
 los cortes y el estado de revisión de las entradas se documentan en el
 [README de raw](../../../raw/births_mortality_dane/mortality/README.md).
+
+## Armonización de Bogotá
+
+Para 2009–2018, la hoja `11` solo contiene el total departamental. El
+procesador conserva ese total y crea una fila municipal `11001` con el nombre
+de Bogotá y exactamente los mismos 25 conteos. No se duplica si ya existe
+el municipio. La validación compara esta fila derivada con el total; no
+representa un desglose independiente publicado. Los raw no se modifican.

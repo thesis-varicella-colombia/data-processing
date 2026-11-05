@@ -8,7 +8,7 @@
 | Cobertura | Colombia y categorías de residencia en el extranjero y sin información |
 | Unidad de observación | Año × entidad de residencia de la madre; incluye municipios, países, filas sin información y totales departamentales/categorías |
 | Unidad de medida | Nacidos vivos; conteos enteros, no población ni tasas |
-| Tamaño observado | **21.802 filas y 21 columnas** |
+| Tamaño observado | **21.814 filas y 21 columnas** |
 | Generación | [`process_births_dane.py`](../../../../scripts/processing/process_births_dane.py) |
 
 ## Cómo se generan los datos
@@ -49,18 +49,18 @@ de cada libro de entrada y pueden variar en mayúsculas o tildes entre años.
 
 | Año | Filas consolidadas | Nacimientos publicados, suma de filas `Total` |
 | --- | ---: | ---: |
-| 2008 | 1.206 | 715.453 |
-| 2009 | 1.208 | 699.775 |
-| 2010 | 1.212 | 654.627 |
-| 2011 | 1.206 | 665.499 |
-| 2012 | 1.211 | 676.835 |
-| 2013 | 1.207 | 658.835 |
-| 2014 | 1.208 | 669.137 |
-| 2015 | 1.206 | 660.999 |
-| 2016 | 1.216 | 647.521 |
-| 2017 | 1.215 | 656.704 |
-| 2018 | 1.212 | 649.115 |
-| 2019 | 1.211 | 639.820 |
+| 2008 | 1.207 | 715.453 |
+| 2009 | 1.209 | 699.775 |
+| 2010 | 1.213 | 654.627 |
+| 2011 | 1.207 | 665.499 |
+| 2012 | 1.212 | 676.835 |
+| 2013 | 1.208 | 658.835 |
+| 2014 | 1.209 | 669.137 |
+| 2015 | 1.207 | 660.999 |
+| 2016 | 1.217 | 647.521 |
+| 2017 | 1.216 | 656.704 |
+| 2018 | 1.213 | 649.115 |
+| 2019 | 1.212 | 639.820 |
 | 2020 | 1.210 | 629.402 |
 | 2021 | 1.219 | 616.914 |
 | 2022 | 1.212 | 573.625 |
@@ -96,11 +96,11 @@ entero de 64 bits; `large_string` es texto. En pandas, los enteros se leen como
 | `rural_disperso_mujeres` | `int64` | 0 | Mujeres en rural disperso. |
 | `sin_informacion_hombres` | `int64` | 0 | Hombres sin información de área. |
 | `sin_informacion_mujeres` | `int64` | 0 | Mujeres sin información de área. |
-| `total_indeterminado` | `int64` | 8.289 | Sexo indeterminado, todas las áreas; nulo si no se publica la columna. |
-| `cabecera_municipal_indeterminado` | `int64` | 8.416 | Sexo indeterminado en cabecera municipal. |
-| `centro_poblado_indeterminado` | `int64` | 8.458 | Sexo indeterminado en centro poblado. |
-| `rural_disperso_indeterminado` | `int64` | 8.331 | Sexo indeterminado en rural disperso. |
-| `sin_informacion_indeterminado` | `int64` | 8.458 | Sexo indeterminado sin información de área. |
+| `total_indeterminado` | `int64` | 8.296 | Sexo indeterminado, todas las áreas; nulo si no se publica la columna. |
+| `cabecera_municipal_indeterminado` | `int64` | 8.423 | Sexo indeterminado en cabecera municipal. |
+| `centro_poblado_indeterminado` | `int64` | 8.465 | Sexo indeterminado en centro poblado. |
+| `rural_disperso_indeterminado` | `int64` | 8.338 | Sexo indeterminado en rural disperso. |
+| `sin_informacion_indeterminado` | `int64` | 8.465 | Sexo indeterminado sin información de área. |
 
 Las convenciones de `codigo_municipio` son:
 
@@ -124,11 +124,7 @@ Por `ano`, `codigo_departamento` y `nombre_departamento`, la validación suma
 de total publicado. Incluye países y filas municipales sin información.
 No valida el resto de las columnas por sexo o área.
 
-Resultado actual: **600 grupos coinciden, ninguna diferencia y 30 grupos
-sin desglose**. En 2008–2019 hay 33 comparaciones y dos grupos sin desglose
-por año (Bogotá y sin información); en 2020–2025 hay 34 comparaciones y un
-grupo sin desglose por año (sin información). Bogotá incluye detalle desde
-2020. No se compara una fila sin desglose contra cero.
+Resultado actual: **612 grupos coinciden, ninguna diferencia y 18 grupos sin desglose**. Solo la categoría sin información carece de desglose; la fila municipal de Bogotá de 2008–2019 se deriva del total departamental.
 
 El script rechaza diferencias, valores de `total` incompletos, totales
 duplicados y desgloses sin total. Que las sumas coincidan verifica la
@@ -167,9 +163,8 @@ totales por año y departamento/categoría.
 **No sumar los totales junto con sus desgloses.** Para una serie nacional
 usar las filas `Total`; para análisis municipal, seleccionar los códigos
 municipales de cinco dígitos y tratar explícitamente los registros sin
-información y las categorías especiales. Bogotá en 2008–2019 requiere una
-decisión de armonización: su fila se conserva como total departamental con
-código `11`, no se transforma automáticamente a `11001`.
+información y las categorías especiales. Bogotá en 2008–2019 conserva el total departamental y agrega una fila municipal
+`11001` con exactamente los mismos conteos; no se duplica si ya existe.
 
 El año es calendario, no epidemiológico. Los conteos son nacimientos por
 residencia de la madre, no población residente ni nacimientos por lugar de
