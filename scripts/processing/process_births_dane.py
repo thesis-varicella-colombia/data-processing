@@ -16,7 +16,7 @@ from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT = ROOT / "data/raw/births_mortality_dane/births"
-DEFAULT_OUTPUT = ROOT / "data/processed/births_mortality_dane/births/births_2008.parquet"
+DEFAULT_OUTPUT = ROOT / "data/processed/births_mortality_dane/births/births.parquet"
 LOGGER = logging.getLogger(__name__)
 YEARS = range(2008, 2026)
 SOURCE_NAMES = {

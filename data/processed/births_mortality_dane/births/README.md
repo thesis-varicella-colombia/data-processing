@@ -4,7 +4,7 @@
 | --- | --- |
 | Datos de entrada | [Archivos raw de nacimientos](../../../raw/births_mortality_dane/births/), 18 libros anuales |
 | Documentación de entrada | [Ficha técnica de raw](../../../raw/births_mortality_dane/births/README.md): inventario, origen, versiones y estructura de los archivos |
-| Archivo local | `births_2008.parquet`, un único archivo; el nombre se conserva, pero contiene **2008–2025** |
+| Archivo local | `births.parquet`, un único archivo que contiene **2008–2025** |
 | Cobertura | Colombia y categorías de residencia en el extranjero y sin información |
 | Unidad de observación | Año × entidad de residencia de la madre; incluye municipios, países, filas sin información y totales departamentales/categorías |
 | Unidad de medida | Nacidos vivos; conteos enteros, no población ni tasas |
@@ -146,13 +146,13 @@ Desde la raíz del repositorio, con las dependencias de `requirements.txt`:
 El script admite `--input-dir` y `--output`; sus rutas predeterminadas se
 resuelven desde la raíz del repositorio, independientemente del directorio
 de ejecución. Escribe primero un archivo temporal y después reemplaza
-`data/processed/births_mortality_dane/births/births_2008.parquet`.
+`data/processed/births_mortality_dane/births/births.parquet`.
 
 ```python
 import pandas as pd
 
 births = pd.read_parquet(
-    "data/processed/births_mortality_dane/births/births_2008.parquet"
+    "data/processed/births_mortality_dane/births/births.parquet"
 )
 totales_publicados = births.loc[births["nombre_municipio"].eq("Total")]
 nacimientos_por_ano = totales_publicados.groupby("ano")["total"].sum()

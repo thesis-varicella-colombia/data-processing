@@ -114,4 +114,5 @@ __pycache__/
 /data/raw/births_mortality_dane/mortality/defunciones-no-fetales2021-cuadro-definitivo-2021.xls
 /data/raw/births_mortality_dane/mortality/defunciones-no-fetales2022-cuadro-definitivo-2022.xls
 /data/raw/births_mortality_dane/mortality/defunciones-no-fetales-2019-cuadro-definitivo-2019.xls
-/data/processed/births_mortality_dane/births/births_2008.parquet
+/data/processed/births_mortality_dane/births/births.parquet
+/data/processed/births_mortality_dane/mortality/mortality.parquet
