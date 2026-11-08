@@ -20,16 +20,19 @@ Como diagnóstico descriptivo de esta serie 2007–2025, se emparejaron las sema
 
 El script escribe un Parquet por año epidemiológico y variante en esta carpeta. `chirps_precipitation_weekly_municipal_sat_AAAA.parquet` identifica `sat`; los archivos anteriores `chirps_precipitation_weekly_municipal_AAAA.parquet` son `rnl`. Los archivos `sat` también incluyen `variante_chirps = "sat"`.
 
-| Columna | Contenido |
-| --- | --- |
-| `codigo_municipio`, `nombre_municipio` | Código DIVIPOLA de cinco dígitos y nombre del municipio. |
-| `ano_epidemiologico`, `semana_epidemiologica` | Año y número de semana según la convención del proyecto. |
-| `inicio_semana`, `fin_semana` | Primer domingo y último sábado, inclusive; pueden caer en años calendario distintos. |
-| `precipitacion_total_mm` | Acumulado semanal de la media municipal diaria ponderada por área, en mm. |
-| `fraccion_area_con_datos` | Área válida acumulada dividida entre siete veces el área municipal cubierta por la grilla. |
-| `dias_con_datos` | Días de la semana con alguna celda válida dentro del municipio; de 0 a 7. |
-| `dias_imputados` | Días de la semana tomados del archivo de borde imputado de 2026; de 0 a 3. |
-| `variante_chirps` | `sat` en los archivos nuevos; los archivos `rnl` anteriores se identifican por su nombre y no tienen esta columna. |
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `codigo_municipio` | `large_string` | Código DIVIPOLA de cinco dígitos, conservando ceros iniciales. |
+| `nombre_municipio` | `large_string` | Nombre de la entidad municipal. |
+| `ano_epidemiologico` | `int64` | Año epidemiológico de la semana; puede diferir del año calendario. |
+| `semana_epidemiologica` | `int64` | Número de semana epidemiológica, de domingo a sábado; semana 1 contiene el 4 de enero. |
+| `inicio_semana` | `large_string` | Domingo inicial, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fin_semana` | `large_string` | Sábado final, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `precipitacion_total_mm` | `double` | Suma semanal de las medias municipales diarias ponderadas por área, en mm. |
+| `fraccion_area_con_datos` | `double` | Fracción de área y días con datos válidos respecto de siete días, entre 0 y 1. |
+| `dias_con_datos` | `uint8` | Días con alguna celda válida en el municipio, de 0 a 7. |
+| `dias_imputados` | `uint8` | Días procedentes del borde imputado de 2026, de 0 a 3. |
+| `variante_chirps` | `large_string` | Variante CHIRPS; sat en las salidas que incluyen esta columna. |
 
 ## Reproducción
 
@@ -42,3 +45,9 @@ Con los NetCDF y el GeoJSON/DIVIPOLA descritos en las fichas de [CHIRPS](../../r
 ```
 
 `sat` es la variante por defecto; `--variant rnl` reproduce la serie anterior. `--start-year` y `--end-year` delimitan los años epidemiológicos; `--municipality CODIGO` limita el cálculo a municipios concretos; `--overwrite` reemplaza salidas de la variante seleccionada. El script también acepta `--input-dir` y `--output-dir`. Lee solo el recorte espacial necesario en bloques de hasta 31 días y escribe cada Parquet mediante un archivo temporal `.part`.
+
+## Esquema de almacenamiento
+
+Los tipos son los tipos físicos Arrow observados en los Parquet locales. `large_string` es texto, `int64` es entero de 64 bits y `double` es real de 64 bits. Las medidas sin datos válidos pueden ser nulas; una cobertura 0 indica ausencia de datos. La clave de cada archivo es (`codigo_municipio`, `ano_epidemiologico`, `semana_epidemiologica`).
+
+`uint8` es un entero sin signo de 8 bits. Los archivos `sat` tienen 11 columnas; los `rnl` anteriores tienen las mismas diez primeras columnas y omiten `variante_chirps`. Las fechas de estos archivos son texto, aunque el integrador las combine con fechas Arrow de SIVIGILA.

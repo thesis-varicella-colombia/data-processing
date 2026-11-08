@@ -50,16 +50,16 @@ los originales. Los XLSX se leen con `openpyxl`.
 
 ## Variables y estructura
 
-| Variable original | Contenido y unidad |
-| --- | --- |
-| Departamento | Código de dos dígitos y nombre; en 2008–2019 el código es el nombre de la hoja |
-| Municipio o país | Código y nombre de residencia; los códigos municipales tienen cinco dígitos y los países pueden tener tres o cinco |
-| Causa | Código y descripción del grupo de causas, o una etiqueta de total |
-| Total | Defunciones de todas las edades y sexos para la entidad y causa de la fila |
-| Sexo | Hombres, mujeres e indeterminado |
-| Grupos de edad | Menor de 1 año, 1–4, 5–14, 15–44, 45–64 y grupos mayores, desagregados por sexo |
-| Edad desconocida | Conteos por sexo sin edad conocida; es distinta de la residencia sin información |
-| Año | Año de referencia declarado en el título del cuadro |
+| Variable original | Tipo lógico | Contenido y unidad |
+| --- | --- | --- |
+| Departamento | texto/encabezado categórico | Código de dos dígitos y nombre; en 2008–2019 el código es el nombre de la hoja |
+| Municipio o país | texto/encabezado categórico | Código y nombre de residencia; los códigos municipales tienen cinco dígitos y los países pueden tener tres o cinco |
+| Causa | texto/encabezado categórico | Código y descripción del grupo de causas, o una etiqueta de total |
+| Total | entero (conteo) | Defunciones de todas las edades y sexos para la entidad y causa de la fila |
+| Sexo | texto/encabezado categórico | Hombres, mujeres e indeterminado |
+| Grupos de edad | texto/encabezado categórico | Menor de 1 año, 1–4, 5–14, 15–44, 45–64 y grupos mayores, desagregados por sexo |
+| Edad desconocida | entero (conteo) | Conteos por sexo sin edad conocida; es distinta de la residencia sin información |
+| Año | entero (metadato del título) | Año de referencia declarado en el título del cuadro |
 
 | Archivos | Encabezados y datos observados |
 | --- | --- |
@@ -128,3 +128,15 @@ no se homologan automáticamente a un DIVIPOLA actual.
 
 Ficha elaborada mediante inspección de los archivos locales y de la fuente
 oficial el **2026-11-05**. Las cifras pueden cambiar con nuevas descargas.
+
+## Lectura del esquema original
+
+El esquema de los cuadros Excel combina las filas de encabezado y las
+posiciones de columna documentadas arriba; no hay un tipo físico único por
+columna. Los códigos territoriales deben conservarse como texto y los conteos
+leerse como enteros que admiten faltantes. Los vacíos no equivalen a cero.
+Sexo y grupo de edad son dimensiones del encabezado: sus cruces
+son columnas de conteos, no columnas categóricas repetidas en cada fila.
+El año se obtiene del título y el departamento también puede venir de la hoja.
+El [diccionario de la salida procesada](../../../processed/births_mortality_dane/mortality/README.md)
+enumera los nombres armonizados, sus tipos Arrow y las reglas de conversión.

@@ -38,3 +38,17 @@ Desde la raíz del repositorio, con `scripts/requirements.txt` instalado y la AP
 `--month` crea un archivo mensual separado; un mes interior no sustituye su archivo anual. El modo normal abarca 2007–2025. `--validate-only` valida el GeoJSON y muestra el plan sin consultar el Zarr; `--overwrite` reemplaza un archivo existente. Cada descarga se escribe como `.part`, se valida por fechas UTC, variables, unidades, coordenadas, grilla y datos legibles, y después se renombra. Un archivo anual completo y válido se omite al reanudar.
 
 El producto anterior obtenido de CDS utilizaba días UTC−05:00. Este producto usa días UTC, así que los valores semanales pueden cambiar cerca de los límites de día y semana. La unión por fecha con [CHIRPS](../precipitation/chirps/README.md) alinea etiquetas diarias; no garantiza que cada observación incorporada en CHIRPS represente exactamente la misma ventana horaria.
+
+## Esquema NetCDF y diccionario de variables
+
+No es una tabla de columnas: las variables climáticas son arreglos sobre (`valid_time`, `latitude`, `longitude`). Los tipos se verificaron en el archivo local `era5_land_daily_2007.nc`; `float32` y `float64` son reales de 32 y 64 bits. Los faltantes se decodifican como `NaN`; la coordenada temporal se interpreta con las unidades y el calendario CF guardados en el NetCDF.
+
+| Variable/coordenada | Tipo | Dimensiones | Descripción y unidad |
+| --- | --- | --- | --- |
+| `t2m` | `float32` | `valid_time`, `latitude`, `longitude` | Temperatura del aire a 2 m, en K. |
+| `d2m` | `float32` | `valid_time`, `latitude`, `longitude` | Temperatura del punto de rocío a 2 m, en K. |
+| `sp` | `float32` | `valid_time`, `latitude`, `longitude` | Presión superficial, en Pa. |
+| `tp` | `float32` | `valid_time`, `latitude`, `longitude` | Precipitación acumulada del día UTC, en m de agua. |
+| `latitude` | `float64` | `latitude` | Latitud de la celda, grados norte. |
+| `longitude` | `float64` | `longitude` | Longitud de la celda, grados este (convención 0–360° de la fuente). |
+| `valid_time` | `datetime64[ns]` decodificado CF; `int64` en disco | `valid_time` | Un día UTC por marca temporal. |

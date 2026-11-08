@@ -48,3 +48,27 @@ Desde la raíz del repositorio, con `scripts/requirements.txt` instalado:
 ```
 
 Los procesadores aceptan `--start-year`, `--end-year`, `--municipality CODIGO`, `--validate-only` y `--overwrite`. `--validate-only` cuenta archivos de entrada faltantes; `--overwrite` regenera salidas existentes. Se lee un año calendario por vez en bloques de diez días y se reutilizan los pesos espaciales mientras la grilla sea idéntica. Para cubrir semanas completas se usan los meses de borde 2006-12 y 2026-01 descritos en la ficha de entrada.
+
+## Esquema y diccionarios de las salidas
+
+La unidad es municipio × semana epidemiológica y la clave es
+(`codigo_municipio`, `ano_epidemiologico`, `semana_epidemiologica`).
+Los Parquet de ERA5-Land comparten este esquema de identificación:
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `codigo_municipio` | `large_string` | Código DIVIPOLA de cinco dígitos, conservando ceros iniciales. |
+| `nombre_municipio` | `large_string` | Nombre de la entidad municipal. |
+| `ano_epidemiologico` | `int64` | Año epidemiológico de la semana; puede diferir del año calendario. |
+| `semana_epidemiologica` | `int64` | Número de semana epidemiológica, de domingo a sábado; semana 1 contiene el 4 de enero. |
+| `inicio_semana` | `large_string` | Domingo inicial, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fin_semana` | `large_string` | Sábado final, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+
+Las fechas climáticas se almacenan como texto ISO `AAAA-MM-DD`. Las medidas
+y fracciones de cobertura son `double`; las medidas pueden ser nulas.
+Los diccionarios completos y los tipos físicos de cada producto están en
+[temperatura](temperature/README.md#esquema-y-diccionario-de-datos),
+[humedad](humidity/README.md#esquema-y-diccionario-de-datos) y
+[precipitación](precipitation/README.md#esquema-y-diccionario-de-datos).
+Los NetCDF diarios y los Parquet con marcas de procedencia de Providencia
+tienen su [diccionario específico](providencia/README.md#esquemas-y-diccionario-de-datos).

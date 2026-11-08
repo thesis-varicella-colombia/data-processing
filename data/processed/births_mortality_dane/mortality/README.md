@@ -168,3 +168,40 @@ procesador conserva ese total y crea una fila municipal `11001` con el nombre
 de Bogotá y exactamente los mismos 25 conteos. No se duplica si ya existe
 el municipio. La validación compara esta fila derivada con el total; no
 representa un desglose independiente publicado. Los raw no se modifican.
+
+## Esquema físico y diccionario completo
+
+Las 30 columnas siguientes están en el orden del Parquet local. `large_string` es texto y `int64` es entero de 64 bits. Los conteos ausentes se conservan como nulos; no se sustituyen por cero. La unidad es año × entidad territorial o categoría, incluyendo las filas Total descritas arriba.
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `ano` | `int64` | Año de referencia de las defunciones, 2008–2025. |
+| `codigo_departamento` | `large_string` | Código departamental como texto, conservando ceros iniciales. |
+| `nombre_departamento` | `large_string` | Nombre del departamento o categoría especial. |
+| `codigo_municipio` | `large_string` | Código municipal de cinco dígitos o convención de total/categoría especial. |
+| `nombre_municipio` | `large_string` | Nombre del municipio, país o Total. |
+| `total` | `int64` | Defunciones de todas las edades y sexos de la entidad. |
+| `total_hombres` | `int64` | Defunciones de todas las edades; hombres. |
+| `total_mujeres` | `int64` | Defunciones de todas las edades; mujeres. |
+| `total_indeterminado` | `int64` | Defunciones de todas las edades; sexo indeterminado. |
+| `edad_menor_1_hombres` | `int64` | Defunciones menores de 1 año; hombres. |
+| `edad_menor_1_mujeres` | `int64` | Defunciones menores de 1 año; mujeres. |
+| `edad_menor_1_indeterminado` | `int64` | Defunciones menores de 1 año; sexo indeterminado. |
+| `edad_1_4_hombres` | `int64` | Defunciones de 1 a 4 años; hombres. |
+| `edad_1_4_mujeres` | `int64` | Defunciones de 1 a 4 años; mujeres. |
+| `edad_1_4_indeterminado` | `int64` | Defunciones de 1 a 4 años; sexo indeterminado. |
+| `edad_5_14_hombres` | `int64` | Defunciones de 5 a 14 años; hombres. |
+| `edad_5_14_mujeres` | `int64` | Defunciones de 5 a 14 años; mujeres. |
+| `edad_5_14_indeterminado` | `int64` | Defunciones de 5 a 14 años; sexo indeterminado. |
+| `edad_15_44_hombres` | `int64` | Defunciones de 15 a 44 años; hombres. |
+| `edad_15_44_mujeres` | `int64` | Defunciones de 15 a 44 años; mujeres. |
+| `edad_15_44_indeterminado` | `int64` | Defunciones de 15 a 44 años; sexo indeterminado. |
+| `edad_45_64_hombres` | `int64` | Defunciones de 45 a 64 años; hombres. |
+| `edad_45_64_mujeres` | `int64` | Defunciones de 45 a 64 años; mujeres. |
+| `edad_45_64_indeterminado` | `int64` | Defunciones de 45 a 64 años; sexo indeterminado. |
+| `edad_65_mas_hombres` | `int64` | Defunciones de 65 años o más; hombres. |
+| `edad_65_mas_mujeres` | `int64` | Defunciones de 65 años o más; mujeres. |
+| `edad_65_mas_indeterminado` | `int64` | Defunciones de 65 años o más; sexo indeterminado. |
+| `edad_desconocida_hombres` | `int64` | Defunciones con edad desconocida; hombres. |
+| `edad_desconocida_mujeres` | `int64` | Defunciones con edad desconocida; mujeres. |
+| `edad_desconocida_indeterminado` | `int64` | Defunciones con edad desconocida; sexo indeterminado. |

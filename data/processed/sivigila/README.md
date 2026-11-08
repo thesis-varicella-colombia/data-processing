@@ -80,3 +80,27 @@ Desde la raíz del repositorio, con los CSV generados por [`convert_sivigila_exc
 ```
 
 `--input-dir`, `--output-dir` y `--divipola` permiten cambiar rutas. `--output-dir` indica la carpeta base de Sivigila. `--start-year` y `--end-year` limitan los **años de los CSV de entrada**. El script de origen lee cada CSV por bloques, valida evento, año y semana, escribe primero `.part` y renombra el Parquet e informe al terminar. Al reanudar, omite pares Parquet/informe válidos; `--overwrite` los regenera. Sus informes `source_weekly_municipal/quality_report/quality_report_AAAA.json` contienen recuentos de entrada, exclusiones, discrepancias temporales y códigos de residencia excluidos. El script de fechas admite `--mode notification`, `--mode symptom` o `--mode both` (predeterminado) y escribe un resumen de calidad en el `quality_report/` de cada salida.
+
+## Esquema y diccionarios completos
+
+La clave de las tres variantes es (`codigo_municipio`,
+`ano_epidemiologico`, `semana_epidemiologica`). Comparten 85 nombres de
+columna; sus tipos físicos se documentan por variante porque el ancho de
+algunos conteos cambia entre archivos anuales.
+
+| Columnas | Tipo físico Arrow | Significado |
+| --- | --- | --- |
+| `codigo_municipio`, `nombre_municipio`, `codigo_departamento` | `large_string` | Identificación de la entidad DIVIPOLA de residencia. |
+| `ano_epidemiologico` | `int64` | Año reportado o derivado de la fecha de cada variante. |
+| `semana_epidemiologica` | `int16` | Semana reportada o derivada, según variante. |
+| `inicio_semana`, `fin_semana` | `date32[day]` | Domingo y sábado de la semana, como fechas sin hora. |
+| Todas las columnas `casos_*` | `int8` o `int64`, según columna y archivo | Conteos enteros de notificaciones que cumplen cada criterio. |
+| `prop_notificados_fuera_municipio` | `double` | Proporción entre 0 y 1; notificados en otra entidad / casos totales. |
+
+Cada ficha enumera **todas las columnas**, sus tipos observados, nulos y
+definiciones: [semana reportada](source_weekly_municipal/README.md#nulos-y-tipos),
+[notificación](notification_weekly_municipal/README.md) e
+[inicio de síntomas](symptom_weekly_municipal/README.md).
+`large_string` es texto; `int8`, `int16` e `int64` son enteros de 8, 16 y 64
+bits y `double` es real de 64 bits. Un conteo almacenado como `int8` sigue
+siendo un conteo, no un indicador booleano.

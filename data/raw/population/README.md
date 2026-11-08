@@ -35,3 +35,36 @@ Tratar el código como texto para conservar los ceros iniciales. La serie 2005�
 El DANE elabora estas series a partir del CNPV 2018 y de modelos demográficos; el libro 2018–2042 menciona un modelo de componentes de cohortes con enfoque multirregional adaptado. Los valores de cada año son **estimaciones o proyecciones anuales**, no conteos observados ese año ni población semanal. Para tasas municipales de Sivigila, documentar el año de población elegido como denominador y la forma de aplicarlo a las semanas epidemiológicas. Revisar también cambios de códigos o límites municipales antes de cruzarlos con DIVIPOLA.
 
 Referencias: [página de proyecciones del DANE](https://www.dane.gov.co/index.php/estadisticas-por-tema/demografia-y-poblacion/proyecciones-de-poblacion) · [documento metodológico de las proyecciones de población](https://www.dane.gov.co/files/censo2018/proyecciones-de-poblacion/Documento-metodologico-proyecciones.pdf).
+
+## Esquema y diccionario de datos
+
+Los libros son tablas municipio × año × área, con encabezados combinados.
+Excel no fija un tipo único por columna: los siguientes son tipos lógicos de
+lectura. Los identificadores se leen como texto; las poblaciones son enteros
+en personas y las celdas vacías son faltantes, no ceros. Las familias de edad
+de la tabla enumeran el esquema completo sin repetir una fila por cada edad.
+
+| Columna o familia exhaustiva | Libro | Tipo lógico | Descripción |
+| --- | --- | --- | --- |
+| `DP` | ambos libros | texto | Código de departamento, dos dígitos. |
+| `DPNOM` | ambos libros | texto | Nombre departamental. |
+| `MPIO` | 2005–2017 | texto | Código municipal de cinco dígitos. |
+| `DPMP` | 2005–2017 | texto | Nombre municipal. |
+| `DPMP` | 2018–2042 | texto | Código municipal de cinco dígitos. |
+| `MPIO` | 2018–2042 | texto | Nombre municipal. |
+| `AÑO` | ambos libros | entero | Año de la estimación/proyección. |
+| `ÁREA GEOGRÁFICA` | ambos libros | texto categórico | Cabecera Municipal, Centros Poblados y Rural Disperso o Total. |
+| `Hombres_0` … `Hombres_84`, `Hombres_85 y más` | 2005–2017 | entero | Hombres por edad simple y grupo abierto de 85 años o más. |
+| `Mujeres_0` … `Mujeres_84`, `Mujeres_85 y más` | 2005–2017 | entero | Mujeres por edad simple y grupo abierto de 85 años o más. |
+| `Total_0` … `Total_84`, `Total_85 y más` | 2005–2017 | entero | Personas de ambos sexos por edad simple y grupo abierto de 85 años o más. |
+| `Total Hombres`, `Total Mujeres`, `Total General` | 2005–2017 | entero | Población de todas las edades por sexo y de ambos sexos. |
+| `Hombres 0 años`, `Hombres 1 año`, `Hombres 2 años` … `Hombres 99 años`, `Hombres 100 años y más` | 2018–2042 | entero | Hombres por edad simple y grupo abierto de 100 años o más. |
+| `Mujeres 0 años`, `Mujeres 1 año`, `Mujeres 2 años` … `Mujeres 99 años`, `Mujeres 100 años y más` | 2018–2042 | entero | Mujeres por edad simple y grupo abierto de 100 años o más. |
+| `Total 0 años`, `Total 1 año`, `Total 2 años` … `Total 99 años`, `Total 100 años y más` | 2018–2042 | entero | Personas de ambos sexos por edad simple y grupo abierto de 100 años o más. |
+| `Total`, `Hombres`, `Mujeres` | 2018–2042 | entero | Población de todas las edades de ambos sexos y por sexo. |
+
+La hoja `NuevaMpal` tiene 267 columnas: seis identificadores, 258 columnas
+de edad y tres totales. `PobMunicipalxÁreaSexoEdad` tiene 312: seis
+identificadores, tres totales y 303 columnas de edad. Las hojas de índice y
+notas metodológicas no son tablas de población para integrar. La salida
+armonizada tiene su [diccionario propio](../../processed/population/README.md#esquema-y-diccionario-de-datos).

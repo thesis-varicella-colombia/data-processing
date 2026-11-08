@@ -52,17 +52,17 @@ definitivas; no deben añadirse automáticamente a esta serie.
 Los encabezados están distribuidos en dos filas con celdas combinadas. Las
 columnas numéricas contienen el total general y su desglose por sexo y área.
 
-| Variable original | Contenido y unidad |
-| --- | --- |
-| Departamento | Código de dos dígitos y nombre; en libros antiguos el código es el nombre de la hoja |
-| Municipio o país | Código y nombre de residencia de la madre; incluye filas `Total` y sin información |
-| Total | Nacimientos, todos los sexos y áreas |
-| Sexo | Hombres, mujeres y, donde aparece, indeterminado |
-| Cabecera municipal | Conteos por sexo para esta área de residencia |
-| Centro poblado | Conteos por sexo para esta área de residencia |
-| Rural disperso | Conteos por sexo para esta área de residencia |
-| Sin información | Conteos por sexo sin información de área; no equivale a desconocer el municipio o el departamento |
-| Año | Año de referencia declarado en el título del cuadro |
+| Variable original | Tipo lógico | Contenido y unidad |
+| --- | --- | --- |
+| Departamento | texto/encabezado categórico | Código de dos dígitos y nombre; en libros antiguos el código es el nombre de la hoja |
+| Municipio o país | texto/encabezado categórico | Código y nombre de residencia de la madre; incluye filas `Total` y sin información |
+| Total | entero (conteo) | Nacimientos, todos los sexos y áreas |
+| Sexo | texto/encabezado categórico | Hombres, mujeres y, donde aparece, indeterminado |
+| Cabecera municipal | entero (conteo) | Conteos por sexo para esta área de residencia |
+| Centro poblado | entero (conteo) | Conteos por sexo para esta área de residencia |
+| Rural disperso | entero (conteo) | Conteos por sexo para esta área de residencia |
+| Sin información | entero (conteo) | Conteos por sexo sin información de área; no equivale a desconocer el municipio o el departamento |
+| Año | entero (metadato del título) | Año de referencia declarado en el título del cuadro |
 
 | Archivos | Encabezados y datos observados |
 | --- | --- |
@@ -107,3 +107,15 @@ Esta fuente es anual, no semanal ni una medida de población residente.
 
 Ficha elaborada mediante inspección de los archivos locales y de la fuente
 oficial el **2026-11-05**. Las cifras pueden cambiar con nuevas descargas.
+
+## Lectura del esquema original
+
+El esquema de los cuadros Excel combina las filas de encabezado y las
+posiciones de columna documentadas arriba; no hay un tipo físico único por
+columna. Los códigos territoriales deben conservarse como texto y los conteos
+leerse como enteros que admiten faltantes. Los vacíos no equivalen a cero.
+Sexo y área son dimensiones del encabezado: sus cruces
+son columnas de conteos, no columnas categóricas repetidas en cada fila.
+El año se obtiene del título y el departamento también puede venir de la hoja.
+El [diccionario de la salida procesada](../../../processed/births_mortality_dane/births/README.md)
+enumera los nombres armonizados, sus tipos Arrow y las reglas de conversión.

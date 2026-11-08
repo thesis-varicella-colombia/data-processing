@@ -33,3 +33,17 @@ Con dependencias de `scripts/requirements.txt` y la API key ya configurada en `~
 `--start-year` y `--end-year` delimitan años epidemiológicos; `--month` descarga solo un mes de prueba. `--validate-only` muestra el plan sin consultar el Zarr. Cada archivo se escribe como `.part`, se valida por horas, variables, unidades, grilla y presencia de datos, y se renombra al completar. Los archivos válidos se omiten al reanudar; `--overwrite` los regenera.
 
 Se conservaron aquí archivos antiguos `era5_atmosphere_daily_AAAA_MM.nc` de una versión anterior. **No son la entrada vigente:** el procesador actual lee los `hourly` y escribe los días derivados bajo `data/processed/climate/providencia/daily/`. En la ejecución local hubo 230 NetCDF horarios (aproximadamente 19,66 MiB) para 2006-12 a 2026-01.
+
+## Esquema NetCDF y diccionario de variables
+
+No es una tabla de columnas: las variables climáticas son arreglos sobre (`valid_time`, `latitude`, `longitude`). Los tipos se verificaron en el archivo local `era5_atmosphere_hourly_2006_12.nc`; `float32` y `float64` son reales de 32 y 64 bits. Los faltantes se decodifican como `NaN`; la coordenada temporal se interpreta con las unidades y el calendario CF guardados en el NetCDF.
+
+| Variable/coordenada | Tipo | Dimensiones | Descripción y unidad |
+| --- | --- | --- | --- |
+| `t2m` | `float32` | `valid_time`, `latitude`, `longitude` | Temperatura del aire a 2 m, en K. |
+| `d2m` | `float32` | `valid_time`, `latitude`, `longitude` | Temperatura del punto de rocío a 2 m, en K. |
+| `sp` | `float32` | `valid_time`, `latitude`, `longitude` | Presión superficial, en Pa. |
+| `tp` | `float32` | `valid_time`, `latitude`, `longitude` | Precipitación de la hora que termina en la marca temporal, en m de agua. |
+| `latitude` | `float64` | `latitude` | Latitud de la celda, grados norte. |
+| `longitude` | `float64` | `longitude` | Longitud de la celda, grados este (convención 0–360° de la fuente). |
+| `valid_time` | `datetime64[ns]` decodificado CF; `int64` en disco | `valid_time` | Instante horario UTC; incluye 00:00 del día siguiente al fin de mes para cerrar tp. |

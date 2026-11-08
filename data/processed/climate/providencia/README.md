@@ -48,3 +48,75 @@ Desde la raíz del repositorio:
 En la ejecución local se guardaron **230 archivos horarios** (19,66 MiB) desde 2006-12 hasta 2026-01, en una grilla de 2 × 2 celdas. La derivación diaria ocupa aproximadamente 8,70 MiB para los 230 meses. Se generaron **19 Parquet por variable**, cada serie con **992 filas** para Providencia, sin faltantes y con cobertura 1 en este producto. Los rangos semanales observados fueron 25,170–29,076 °C; 70,564–87,784 % de humedad relativa; 14,542–20,403 g/kg de humedad específica; 17,044–23,545 g/m³ de humedad absoluta; y 0,021–249,594 mm de precipitación. Estos rangos son controles de plausibilidad, no una validación frente a observaciones locales. Los Parquet ERA5-Land de Providencia permanecen en `NaN` con cobertura 0.
 
 Tras separar los scripts, se comprobaron los **230 diarios nuevos** contra los derivados previos: las cuatro variables coincidieron exactamente. Los tres Parquet semanales de 2024 recalculados desde la nueva ruta también coincidieron exactamente con las salidas existentes.
+
+## Esquemas y diccionario de datos
+
+Los tipos son los tipos físicos Arrow observados en los Parquet locales. `large_string` es texto, `int64` es entero de 64 bits y `double` es real de 64 bits. Las medidas sin datos válidos pueden ser nulas; una cobertura 0 indica ausencia de datos. La clave de cada archivo es (`codigo_municipio`, `ano_epidemiologico`, `semana_epidemiologica`).
+
+Los tres productos semanales incluyen `fuente_dato` (`large_string`) y `es_estimacion` (`bool`). `codigo_municipio` vale `88564`. Las tablas siguientes enumeran todas las columnas de cada producto.
+
+### Temperatura: `temperature/`
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `codigo_municipio` | `large_string` | Código DIVIPOLA de cinco dígitos, conservando ceros iniciales. |
+| `nombre_municipio` | `large_string` | Nombre de la entidad municipal. |
+| `ano_epidemiologico` | `int64` | Año epidemiológico de la semana; puede diferir del año calendario. |
+| `semana_epidemiologica` | `int64` | Número de semana epidemiológica, de domingo a sábado; semana 1 contiene el 4 de enero. |
+| `inicio_semana` | `large_string` | Domingo inicial, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fin_semana` | `large_string` | Sábado final, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fuente_dato` | `large_string` | Procedencia: ERA5_atmosphere_hourly_EDH. |
+| `es_estimacion` | `bool` | Verdadero para la estimación atmosférica separada de Providencia. |
+| `temperatura_media_c` | `double` | Temperatura media semanal ponderada por área y día, en °C. |
+| `fraccion_area_con_datos` | `double` | Fracción de área y días con datos válidos respecto de siete días, entre 0 y 1. |
+
+### Humedad: `humidity/`
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `codigo_municipio` | `large_string` | Código DIVIPOLA de cinco dígitos, conservando ceros iniciales. |
+| `nombre_municipio` | `large_string` | Nombre de la entidad municipal. |
+| `ano_epidemiologico` | `int64` | Año epidemiológico de la semana; puede diferir del año calendario. |
+| `semana_epidemiologica` | `int64` | Número de semana epidemiológica, de domingo a sábado; semana 1 contiene el 4 de enero. |
+| `inicio_semana` | `large_string` | Domingo inicial, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fin_semana` | `large_string` | Sábado final, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fuente_dato` | `large_string` | Procedencia: ERA5_atmosphere_hourly_EDH. |
+| `es_estimacion` | `bool` | Verdadero para la estimación atmosférica separada de Providencia. |
+| `humedad_relativa_media_pct` | `double` | Humedad relativa media semanal ponderada por área y día, en %. |
+| `fraccion_area_con_datos_humedad_relativa_media_pct` | `double` | Fracción de área y días válidos para humedad_relativa_media_pct, entre 0 y 1. |
+| `humedad_especifica_media_g_kg` | `double` | Humedad específica media semanal ponderada por área y día, en g/kg. |
+| `fraccion_area_con_datos_humedad_especifica_media_g_kg` | `double` | Fracción de área y días válidos para humedad_especifica_media_g_kg, entre 0 y 1. |
+| `humedad_absoluta_media_g_m3` | `double` | Densidad media semanal de vapor de agua ponderada por área y día, en g/m³. |
+| `fraccion_area_con_datos_humedad_absoluta_media_g_m3` | `double` | Fracción de área y días válidos para humedad_absoluta_media_g_m3, entre 0 y 1. |
+
+### Precipitación: `precipitation/`
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `codigo_municipio` | `large_string` | Código DIVIPOLA de cinco dígitos, conservando ceros iniciales. |
+| `nombre_municipio` | `large_string` | Nombre de la entidad municipal. |
+| `ano_epidemiologico` | `int64` | Año epidemiológico de la semana; puede diferir del año calendario. |
+| `semana_epidemiologica` | `int64` | Número de semana epidemiológica, de domingo a sábado; semana 1 contiene el 4 de enero. |
+| `inicio_semana` | `large_string` | Domingo inicial, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fin_semana` | `large_string` | Sábado final, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fuente_dato` | `large_string` | Procedencia: ERA5_atmosphere_hourly_EDH. |
+| `es_estimacion` | `bool` | Verdadero para la estimación atmosférica separada de Providencia. |
+| `precipitacion_total_mm` | `double` | Suma semanal de las medias municipales diarias ponderadas por área, en mm. |
+| `fraccion_area_con_datos` | `double` | Fracción de área y días con datos válidos respecto de siete días, entre 0 y 1. |
+
+### NetCDF diarios derivados: `daily/`
+
+Esquema multidimensional: cada variable climática tiene dimensiones
+(`valid_time`, `latitude`, `longitude`), con una fecha por día UTC y una grilla
+de 2 × 2 celdas. Los tipos se verificaron en los archivos diarios locales;
+los faltantes se representan como `NaN`.
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `valid_time` | `datetime64[ns]` al decodificar CF; `int64` en disco | Fecha del día UTC; coordenada temporal. |
+| `latitude` | `float64` | Latitud de la celda, grados norte; dimensión latitude. |
+| `longitude` | `float64` | Longitud de la celda, grados este; dimensión longitude. |
+| `t2m` | `float64` | Media diaria de temperatura a 2 m, en K; requiere 24 horas válidas. |
+| `d2m` | `float64` | Media diaria de punto de rocío a 2 m, en K; requiere 24 horas válidas. |
+| `sp` | `float64` | Media diaria de presión superficial, en Pa; requiere 24 horas válidas. |
+| `tp` | `float64` | Precipitación acumulada del día, en m de agua; suma de las 24 horas descritas arriba. |

@@ -18,3 +18,22 @@ Desde la raíz del repositorio:
 ```
 
 `--start-year`, `--end-year` y `--municipality` delimitan la ejecución; `--overwrite` regenera salidas existentes.
+
+## Esquema y diccionario de datos
+
+Los tipos son los tipos físicos Arrow observados en los Parquet locales. `large_string` es texto, `int64` es entero de 64 bits y `double` es real de 64 bits. Las medidas sin datos válidos pueden ser nulas; una cobertura 0 indica ausencia de datos. La clave de cada archivo es (`codigo_municipio`, `ano_epidemiologico`, `semana_epidemiologica`).
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `codigo_municipio` | `large_string` | Código DIVIPOLA de cinco dígitos, conservando ceros iniciales. |
+| `nombre_municipio` | `large_string` | Nombre de la entidad municipal. |
+| `ano_epidemiologico` | `int64` | Año epidemiológico de la semana; puede diferir del año calendario. |
+| `semana_epidemiologica` | `int64` | Número de semana epidemiológica, de domingo a sábado; semana 1 contiene el 4 de enero. |
+| `inicio_semana` | `large_string` | Domingo inicial, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `fin_semana` | `large_string` | Sábado final, inclusive; texto ISO AAAA-MM-DD en estos Parquet climáticos. |
+| `humedad_relativa_media_pct` | `double` | Humedad relativa media semanal ponderada por área y día, en %. |
+| `fraccion_area_con_datos_humedad_relativa_media_pct` | `double` | Fracción de área y días válidos para humedad_relativa_media_pct, entre 0 y 1. |
+| `humedad_especifica_media_g_kg` | `double` | Humedad específica media semanal ponderada por área y día, en g/kg. |
+| `fraccion_area_con_datos_humedad_especifica_media_g_kg` | `double` | Fracción de área y días válidos para humedad_especifica_media_g_kg, entre 0 y 1. |
+| `humedad_absoluta_media_g_m3` | `double` | Densidad media semanal de vapor de agua ponderada por área y día, en g/m³. |
+| `fraccion_area_con_datos_humedad_absoluta_media_g_m3` | `double` | Fracción de área y días válidos para humedad_absoluta_media_g_m3, entre 0 y 1. |

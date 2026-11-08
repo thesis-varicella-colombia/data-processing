@@ -21,6 +21,11 @@ y 2026 cuando alguna fecha individual pertenece a esos años epidemiológicos.
 
 ## Entradas y uniones
 
+El integrador lee los datasets de `data/processed/` de la siguiente tabla.
+Estos se generan previamente a partir de los archivos en `data/raw/`
+documentados en la sección de procedencia; el integrador no lee directamente
+los archivos originales.
+
 | Fuente | Ruta | Unión |
 | --- | --- | --- |
 | Casos semanales de SIVIGILA | `data/processed/sivigila/{source,notification,symptom}_weekly_municipal/` | Tabla base elegida por `--week-source`; municipio de residencia y semana definida por cada fuente |
@@ -40,6 +45,27 @@ series. Los totales de casos y filas se conservan al integrar: ninguna unión
 elimina filas de SIVIGILA.
 
 Providencia (`88564`) carece de valores climáticos en ERA5-Land. Sus valores nulos se completan con los archivos separados de ERA5 atmosférico horario. Para cada variable se conserva la fracción de área con datos de la fuente utilizada y se incluyen columnas `fuente_*` y `es_estimacion_*`. Estas series son **estimaciones de otra fuente y resolución**, no observaciones locales ni valores directamente equivalentes a ERA5-Land. CHIRPS permanece como una precipitación separada (`precipitacion_total_mm_chirps_sat`).
+
+### Procedencia de las entradas desde `data/raw/`
+
+Todas las rutas se expresan desde la raíz del repositorio. Los enlaces de
+origen describen los datasets originales, su descarga y sus limitaciones.
+
+| Entrada procesada | Dataset y archivos de origen en `data/raw/` | Scripts que generan la entrada |
+| --- | --- | --- |
+| Casos semanales de SIVIGILA | [Microdatos de varicela individual del INS, evento 831](../../raw/sivigila/README.md): `data/raw/sivigila/excel/Datos_AAAA_831.xlsx` (2007–2025), convertidos a `data/raw/sivigila/csv/Datos_AAAA_831.csv` | [`convert_sivigila_excel_to_csv.py`](../../../scripts/processing/convert_sivigila_excel_to_csv.py) convierte los originales; [`calculate_weekly_sivigila.py`](../../../scripts/processing/calculate_weekly_sivigila.py) genera `source` y [`calculate_date_weekly_sivigila.py`](../../../scripts/processing/calculate_date_weekly_sivigila.py) genera `notification` y `symptom`. |
+| Población municipal | [Proyecciones y retroproyecciones municipales del DANE](../../raw/population/README.md): `data/raw/population/DCD-area-sexo-edad-proypoblacion-Mun-2005-2017_VP.xlsx` y `data/raw/population/PPED-AreaSexoEdadMun-2018-2042_VP.xlsx` | [`process_population.py`](../../../scripts/processing/process_population.py) armoniza los dos libros y selecciona 2007–2025. |
+| Cobertura de vacunación | [Coberturas municipales del PAI, Ministerio de Salud](../../raw/vaccine_coverage/README.md): `data/raw/vaccine_coverage/Coberturas de Vacunacion Municipal desde 1998-2025(30-01-2025).xlsx` | [`process_vaccine_coverage.py`](../../../scripts/processing/process_vaccine_coverage.py) extrae las columnas de varicela y asigna los años de análisis 2016–2025. |
+| Precipitación CHIRPS | [CHIRPS v3.0 Final, variante `sat`](../../raw/precipitation/chirps/README.md): `data/raw/precipitation/chirps/AAAA/chirps-v3.0.sat.AAAA.days_p05.nc`, junto con los NetCDF de borde observado de 2006 e imputado de 2026 en esa misma estructura anual | [`calculate_weekly_chirps_precipitation.py`](../../../scripts/processing/calculate_weekly_chirps_precipitation.py) agrega la precipitación diaria por municipio y semana. |
+| Humedad, precipitación y temperatura ERA5-Land | [ERA5-Land Daily UTC](../../raw/era5_land/README.md): `data/raw/era5_land/era5_land_daily_AAAA.nc` | [`calculate_weekly_humidity.py`](../../../scripts/processing/calculate_weekly_humidity.py), [`calculate_weekly_precipitation.py`](../../../scripts/processing/calculate_weekly_precipitation.py) y [`calculate_weekly_temperature.py`](../../../scripts/processing/calculate_weekly_temperature.py) generan las tres series semanales. |
+| Estimaciones climáticas de Providencia | [ERA5 atmosférico horario para Providencia](../../raw/era5_atmosphere_providencia/README.md): `data/raw/era5_atmosphere_providencia/era5_atmosphere_hourly_AAAA_MM.nc` | [`estimate_providencia.py`](../../../scripts/processing/estimate_providencia.py) deriva los datos diarios y las estimaciones semanales de humedad, precipitación y temperatura. |
+
+Como insumos geográficos auxiliares se usan el catálogo DIVIPOLA
+`data/raw/municipios/DIVIPOLA-_Códigos_municipios_20261007.csv` y los polígonos
+`data/raw/municipios/MGN_ADM_MPIO_GRAFICO.geojson`, documentados en la
+[ficha de municipios](../../raw/municipios/README.md). El procesamiento de
+SIVIGILA valida las entidades contra DIVIPOLA; los procesadores climáticos
+usan el catálogo y los polígonos para la agregación municipal.
 
 ## Generación y lectura
 

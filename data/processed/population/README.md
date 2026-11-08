@@ -35,3 +35,32 @@ Es una comparación exploratoria entre población estimada/proyectada menor de
 un año y un saldo de nacimientos menos defunciones infantiles del año previo;
 las dos variables no representan exactamente la misma medida demográfica.
 Esta consulta no modifica el CSV ni el Parquet de sobrevivientes.
+
+## Esquema y diccionario de datos
+
+CSV de 22 columnas, con una fila por (`codigo_municipio`, `ano_epidemiologico`). El CSV no almacena tipos físicos: se indican tipos de lectura recomendados de pandas (`string` e `Int64`, entero que admite nulos). Leer el código como texto para conservar los cinco dígitos. Todas las medidas son personas estimadas o proyectadas; un valor ausente no equivale a cero.
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `codigo_municipio` | `string` | Código DIVIPOLA de cinco dígitos, conservando ceros iniciales. |
+| `ano_epidemiologico` | `Int64` | Año epidemiológico de la semana; puede diferir del año calendario. |
+| `poblacion_total` | `Int64` | Personas de todas las edades y ambos sexos, área Total. |
+| `poblacion_hombres` | `Int64` | Hombres de todas las edades, área Total. |
+| `poblacion_mujeres` | `Int64` | Mujeres de todas las edades, área Total. |
+| `poblacion_cabecera` | `Int64` | Personas de todas las edades y ambos sexos en Cabecera Municipal. |
+| `poblacion_rural` | `Int64` | Personas de todas las edades y ambos sexos en Centros Poblados y Rural Disperso. |
+| `poblacion_menor_1` | `Int64` | Personas menores de 1 año, ambos sexos, área Total. |
+| `poblacion_1_4` | `Int64` | Personas de 1 a 4 años, ambos sexos, área Total. |
+| `poblacion_5_14` | `Int64` | Personas de 5 a 14 años, ambos sexos, área Total. |
+| `poblacion_15_49` | `Int64` | Personas de 15 a 49 años, ambos sexos, área Total. |
+| `poblacion_50_mas` | `Int64` | Personas de 50 años o más, ambos sexos, área Total. |
+| `poblacion_hombres_menor_1` | `Int64` | Personas menores de 1 año, hombres, área Total. |
+| `poblacion_hombres_1_4` | `Int64` | Personas de 1 a 4 años, hombres, área Total. |
+| `poblacion_hombres_5_14` | `Int64` | Personas de 5 a 14 años, hombres, área Total. |
+| `poblacion_hombres_15_49` | `Int64` | Personas de 15 a 49 años, hombres, área Total. |
+| `poblacion_hombres_50_mas` | `Int64` | Personas de 50 años o más, hombres, área Total. |
+| `poblacion_mujeres_menor_1` | `Int64` | Personas menores de 1 año, mujeres, área Total. |
+| `poblacion_mujeres_1_4` | `Int64` | Personas de 1 a 4 años, mujeres, área Total. |
+| `poblacion_mujeres_5_14` | `Int64` | Personas de 5 a 14 años, mujeres, área Total. |
+| `poblacion_mujeres_15_49` | `Int64` | Personas de 15 a 49 años, mujeres, área Total. |
+| `poblacion_mujeres_50_mas` | `Int64` | Personas de 50 años o más, mujeres, área Total. |

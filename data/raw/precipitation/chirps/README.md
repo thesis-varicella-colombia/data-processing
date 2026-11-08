@@ -79,3 +79,32 @@ Los días de borde se generan cuando el intervalo solicitado comienza en 2007 o 
 ## Interpretación para el análisis posterior
 
 Para sumar precipitación por semana epidemiológica, use los acumulados diarios de `precip` y documente la variante usada: `sat` distribuye el total pentadal con IMERG, mientras `rnl` usa ERA5. La fecha diaria se interpreta según la convención de desagregación descrita arriba. Toda semana que incluya 2026-01-01 a 2026-01-03 contiene valores **imputados por este proyecto** y debe identificarse como parcialmente imputada. El cálculo municipio-semana y la definición de semanas epidemiológicas quedan fuera de este descargador. [Fuente: CHC, documentación diaria](https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily/readme.txt).
+
+## Esquema y diccionario de variables
+
+El esquema utilizado por los scripts es un NetCDF con `precip(time, latitude,
+longitude)`. Los NetCDF originales no están disponibles en esta copia local;
+se documentan nombres y tipos lógicos verificados en el descargador, sin
+atribuirles un tipo físico no inspeccionado. Los bordes que genera el proyecto
+escriben `precip` como `float32` y representan faltantes con `NaN`.
+
+| Variable/coordenada | Tipo lógico | Dimensiones | Descripción y unidad |
+| --- | --- | --- | --- |
+| `time` | fecha diaria CF | `time` | Fecha a la que se asigna la precipitación diaria. |
+| `latitude` | real | `latitude` | Latitud del centro de celda, grados norte. |
+| `longitude` | real | `longitude` | Longitud del centro de celda, grados este. |
+| `precip` | real; `float32` en bordes derivados | `time`, `latitude`, `longitude` | Precipitación diaria, mm acumulados del día; tratar el valor de relleno como faltante. |
+
+### Manifiesto de descarga
+
+`download_manifest.csv` tiene una fila por archivo anual registrado. Los
+tipos siguientes son de lectura, ya que CSV no guarda un esquema físico.
+
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `variant` | texto | sat o rnl; si la columna no existe en manifiestos antiguos, corresponde a rnl. |
+| `year` | entero | Año del archivo anual descargado. |
+| `filename` | texto | Nombre local del archivo NetCDF. |
+| `source_url` | texto | URL de descarga del archivo. |
+| `downloaded_at_utc` | fecha-hora ISO 8601 | Fecha y hora UTC registradas al completar la descarga. |
+| `bytes` | entero | Tamaño del archivo descargado, en bytes. |

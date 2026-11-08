@@ -10,19 +10,19 @@ El año de salida `anio` es el **año de la hoja original más uno**: los datos 
 
 ## Columnas
 
-| Columna | Contenido |
-| --- | --- |
-| `CODEP` | Código de departamento del libro de origen. |
-| `Nombre_ET` | Nombre de la entidad territorial en el libro. |
-| `DIVIPOLA` | Código municipal, conservado como texto. |
-| `Municipio` | Nombre municipal en la hoja original. |
-| `meta_pob_1_anio` | Meta de población usada para la dosis de varicela de un año; se conserva el valor original, incluida la meta de media cohorte de la hoja 2015. |
-| `varicela_un_anio_dosis_unica` | Dosis única de varicela de un año reportadas. |
-| `%_varicela_un_anio_dosis_unica` | Cobertura publicada para esa dosis, en porcentaje. |
-| `meta_pob_5_anios` | Meta de población de cinco años; nula para las hojas 2015–2018. |
-| `varicela_cinco_anios_refuerzo` | Dosis de refuerzo de cinco años; nula para las hojas 2015–2018. |
-| `%_varicela_cinco_anios_refuerzo` | Cobertura publicada del refuerzo, en porcentaje; nula para las hojas 2015–2018. |
-| `anio` | Año de análisis asignado tras desplazar un año la hoja de origen. |
+| Columna | Tipo | Descripción |
+| --- | --- | --- |
+| `CODEP` | `string` | Código de departamento del libro de origen. |
+| `Nombre_ET` | `string` | Nombre de la entidad territorial en el libro. |
+| `DIVIPOLA` | `string` | Código municipal, conservado como texto. |
+| `Municipio` | `string` | Nombre municipal en la hoja original. |
+| `meta_pob_1_anio` | `Float64` | Meta de población usada para la dosis de varicela de un año; se conserva el valor original, incluida la meta de media cohorte de la hoja 2015. |
+| `varicela_un_anio_dosis_unica` | `Float64` | Dosis única de varicela de un año reportadas. |
+| `%_varicela_un_anio_dosis_unica` | `Float64` | Cobertura publicada para esa dosis, en porcentaje. |
+| `meta_pob_5_anios` | `Float64` | Meta de población de cinco años; nula para las hojas 2015–2018. |
+| `varicela_cinco_anios_refuerzo` | `Float64` | Dosis de refuerzo de cinco años; nula para las hojas 2015–2018. |
+| `%_varicela_cinco_anios_refuerzo` | `Float64` | Cobertura publicada del refuerzo, en porcentaje; nula para las hojas 2015–2018. |
+| `anio` | `Int64` | Año de análisis asignado tras desplazar un año la hoja de origen. |
 
 Las columnas de cobertura se copian del Excel, **no se recalculan** a partir de dosis y metas. Pueden superar 100 %. En la hoja 2019 el conteo de cinco años aparece sin la palabra `Ref.` en el encabezado; se armoniza con el mismo nombre de salida. La columna adicional `% Varicela\n5 Años ` de la hoja 2025 se descarta antes de unir los años, aunque esa hoja no llega al CSV final.
 
@@ -37,3 +37,13 @@ Coloque el libro con el nombre indicado en la [ficha de origen](../../raw/vaccin
 ```
 
 El script escribe `data/processed/vaccine_coverage/coberturas_municipales_2016_2025.csv`. Acepta `--input-file` y `--output-file` para cambiar las rutas. El CSV se guarda con codificación UTF-8 con BOM (`utf-8-sig`).
+
+## Esquema de lectura
+
+El CSV contiene 11 columnas y no conserva tipos físicos. La tabla indica
+tipos recomendados de pandas: `string` para códigos y nombres, `Int64` para
+el año y `Float64` para las medidas, admitiendo nulos. Las metas pueden
+contener fracciones; se conservan los valores numéricos publicados de dosis
+y coberturas. Las celdas vacías son faltantes, no ceros. La unidad es
+municipio × año de análisis (`DIVIPOLA`, `anio`); el procesador no valida
+que esa combinación sea única en el libro original.
