@@ -119,3 +119,6 @@ __pycache__/
 /data/processed/births_mortality_dane/integration/*.parquet
 /data/processed/births_mortality_dane/integration/unmatched_rows.csv
 /data/processed/births_mortality_dane/integration/quality_report.json
+/data/raw/births_mortality_dane/mortality/anex-EEVV-RegistrosTardiosDefunciones-2003a2024-sep2026.xlsx
+/data/raw/births_mortality_dane/anex-EEVV-RegistrosTardiosDefunciones-2003a2024-sep2026.xlsx:Zone.Identifier
+/data/raw/births_mortality_dane/anex-EEVV-RegistrosTardiosNacimientos-2003a2024-sep2026.xlsx:Zone.Identifier

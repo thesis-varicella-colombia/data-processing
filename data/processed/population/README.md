@@ -13,3 +13,25 @@ Para regenerarlo desde la raíz del repositorio:
 ```
 
 El notebook [`population_raw_explore.ipynb`](../../../notebooks/population_raw_explore.ipynb) muestra las mismas transformaciones y tiene una celda final para guardar este CSV.
+
+## Comparación con sobrevivientes de un año
+
+El notebook [`surviving_infants_explore.ipynb`](../../../notebooks/surviving_infants_explore.ipynb)
+consulta este CSV y lo une al [consolidado de sobrevivientes](../births_mortality_dane/integration/README.md)
+por `codigo_municipio` y `ano_epidemiologico = ano`. Lee únicamente esas dos
+claves y `poblacion_menor_1`, conservando los códigos como texto y validando
+que población tenga una sola fila por municipio y año. La unión izquierda
+conserva todas las filas de sobrevivientes y agrega solo `poblacion_menor_1`.
+
+`poblacion_menor_1` representa personas menores de un año, de ambos sexos,
+tomadas de la fila de área `Total`. La comparación usa la población del año
+de la fila y calcula
+`porcentaje_diferencia = abs(sobrevivientes_edad_1 - poblacion_menor_1) / poblacion_menor_1 * 100`.
+El resultado se ordena de mayor a menor; los porcentajes no calculables quedan
+al final. Si falta un valor o el denominador es cero o negativo, el porcentaje
+queda nulo. El notebook muestra también la cobertura de la unión.
+
+Es una comparación exploratoria entre población estimada/proyectada menor de
+un año y un saldo de nacimientos menos defunciones infantiles del año previo;
+las dos variables no representan exactamente la misma medida demográfica.
+Esta consulta no modifica el CSV ni el Parquet de sobrevivientes.
